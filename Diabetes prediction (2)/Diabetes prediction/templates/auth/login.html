@@ -1,0 +1,331 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign In - HealthGuard AI Diabetes Screening{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <!-- Animated Background Elements -->
+  <div class="auth-bg-ambient" aria-hidden="true">
+    <div class="auth-orb auth-orb-1"></div>
+    <div class="auth-orb auth-orb-2"></div>
+    <div class="auth-orb auth-orb-3"></div>
+  </div>
+
+  <!-- Interactive Dynamic Medical/Particle Canvas -->
+  <canvas id="authCanvas" class="auth-canvas"></canvas>
+
+  <!-- Glassmorphism Authentication Card -->
+  <div class="auth-card">
+    <div class="auth-card-topbar">
+      <a href="{{ url_for('index') }}" class="back-home-link" title="Return to Homepage">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Home</span>
+      </a>
+      <span class="auth-security-pill">
+        <i class="fa-solid fa-shield-halved"></i> 256-Bit SSL Secure
+      </span>
+    </div>
+
+    <div class="auth-header">
+      <div class="auth-icon-wrapper">
+        <div class="auth-icon-pulse"></div>
+        <i class="fa-solid fa-user-shield"></i>
+      </div>
+      <h2>Welcome Back</h2>
+      <p>Log in to access your clinical screening assessments and risk trends</p>
+    </div>
+
+    <!-- Quick-Fill Demo Credentials Bar -->
+    <div class="demo-account-box">
+      <div class="demo-box-label">
+        <i class="fa-solid fa-bolt-lightning"></i> Quick Test Accounts
+      </div>
+      <div class="demo-btn-group">
+        <button type="button" class="demo-pill-btn" id="fillDemoUser" title="Fill Patient Credentials">
+          <i class="fa-solid fa-user"></i>
+          <span>Patient Account</span>
+        </button>
+        <button type="button" class="demo-pill-btn demo-admin-btn" id="fillAdminUser" title="Fill Administrator Credentials">
+          <i class="fa-solid fa-shield-cat"></i>
+          <span>Administrator</span>
+        </button>
+      </div>
+    </div>
+
+    <form method="POST" action="{{ url_for('login', next=request.args.get('next')) }}" id="loginForm">
+      <div class="form-group">
+        <label for="email" class="form-label">
+          <span>Email Address</span>
+        </label>
+        <div class="input-icon-group">
+          <i class="fa-solid fa-envelope input-icon"></i>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            class="form-control with-icon" 
+            required 
+            placeholder="name@example.com" 
+            value="{{ email or '' }}" 
+            autocomplete="email"
+          >
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password" class="form-label">
+          <span>Password</span>
+        </label>
+        <div class="input-icon-group">
+          <i class="fa-solid fa-lock input-icon"></i>
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            class="form-control with-icon with-action" 
+            required 
+            placeholder="••••••••" 
+            autocomplete="current-password"
+          >
+          <button type="button" class="password-toggle-btn" id="togglePassword" aria-label="Toggle password visibility">
+            <i class="fa-solid fa-eye" id="togglePasswordIcon"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="auth-options-row">
+        <label class="custom-checkbox-container">
+          <input type="checkbox" name="remember" value="1" checked>
+          <span>Remember this device</span>
+        </label>
+      </div>
+
+      <button type="submit" class="btn auth-submit-btn btn-block btn-lg" id="submitBtn">
+        <span>Sign In to Portal</span>
+        <i class="fa-solid fa-arrow-right auth-btn-arrow"></i>
+      </button>
+    </form>
+
+    <div class="auth-footer-links">
+      <span>Don't have an account yet?</span>
+      <a href="{{ url_for('register') }}" class="auth-link-highlight">Create Account</a>
+    </div>
+
+    <div class="auth-trust-badge">
+      <i class="fa-solid fa-lock"></i>
+      <span>HIPAA Aligned Architecture &bull; 100% Isolated Data</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Password Visibility Toggle
+  const toggleBtn = document.getElementById('togglePassword');
+  const passwordInput = document.getElementById('password');
+  const toggleIcon = document.getElementById('togglePasswordIcon');
+
+  if (toggleBtn && passwordInput && toggleIcon) {
+    toggleBtn.addEventListener('click', () => {
+      const isPassword = passwordInput.type === 'password';
+      passwordInput.type = isPassword ? 'text' : 'password';
+      toggleIcon.classList.toggle('fa-eye', !isPassword);
+      toggleIcon.classList.toggle('fa-eye-slash', isPassword);
+    });
+  }
+
+  // Quick Demo Credentials Auto-Fill with Active Feedback
+  const fillUserBtn = document.getElementById('fillDemoUser');
+  const fillAdminBtn = document.getElementById('fillAdminUser');
+  const emailInput = document.getElementById('email');
+
+  function setActiveDemo(btn, email, pass) {
+    [fillUserBtn, fillAdminBtn].forEach(b => b?.classList.remove('active-filled'));
+    btn?.classList.add('active-filled');
+    if (emailInput) emailInput.value = email;
+    if (passwordInput) passwordInput.value = pass;
+    
+    // Quick pulse animation on input
+    [emailInput, passwordInput].forEach(inp => {
+      if (inp) {
+        inp.style.transition = 'box-shadow 0.2s ease, border-color 0.2s ease';
+        inp.style.borderColor = 'var(--primary)';
+        inp.style.boxShadow = '0 0 0 4px rgba(79, 70, 229, 0.2)';
+        setTimeout(() => {
+          inp.style.boxShadow = '';
+          inp.style.borderColor = '';
+        }, 400);
+      }
+    });
+  }
+
+  fillUserBtn?.addEventListener('click', () => {
+    setActiveDemo(fillUserBtn, 'john.doe@example.com', 'User@12345');
+  });
+
+  fillAdminBtn?.addEventListener('click', () => {
+    setActiveDemo(fillAdminBtn, 'admin@healthguard.ai', 'Admin@12345');
+  });
+
+  // Dynamic Background Particle & ECG Pulse Canvas
+  (function initAuthAnimation() {
+    const canvas = document.getElementById('authCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+
+    // Particle nodes configuration
+    const particleCount = Math.min(Math.floor((width * height) / 28000), 45);
+    const particles = [];
+    const colors = [
+      'rgba(79, 70, 229, ',  // Teal
+      'rgba(124, 58, 237, ',   // Cyan
+      'rgba(16, 185, 129, ',  // Emerald
+      'rgba(99, 102, 241, '   // Soft indigo
+    ];
+
+    for (let i = 0; i < particleCount; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.65,
+        vy: (Math.random() - 0.5) * 0.65,
+        radius: Math.random() * 2.5 + 1.5,
+        colorPrefix: colors[Math.floor(Math.random() * colors.length)],
+        baseAlpha: Math.random() * 0.4 + 0.25,
+        pulseSpeed: Math.random() * 0.03 + 0.015,
+        pulseVal: Math.random() * Math.PI
+      });
+    }
+
+    // ECG Heartbeat Sweep Line
+    let ecgX = 0;
+    const ecgSpeed = 3.2;
+    const ecgY = () => height * 0.78; // Positioned gracefully in the lower third
+
+    function getEcgOffset(x) {
+      // Normal flat baseline with intermittent ECG QRS-complex spikes
+      const period = 360;
+      const pos = x % period;
+      if (pos > 140 && pos < 155) {
+        return -8 * Math.sin(((pos - 140) / 15) * Math.PI); // P wave
+      } else if (pos >= 155 && pos < 165) {
+        return 6 * Math.sin(((pos - 155) / 10) * Math.PI); // Q dip
+      } else if (pos >= 165 && pos < 185) {
+        return -36 * Math.sin(((pos - 165) / 20) * Math.PI); // R sharp peak
+      } else if (pos >= 185 && pos < 195) {
+        return 12 * Math.sin(((pos - 185) / 10) * Math.PI); // S dip
+      } else if (pos >= 210 && pos < 240) {
+        return -12 * Math.sin(((pos - 210) / 30) * Math.PI); // T wave
+      }
+      return 0;
+    }
+
+    let animationId;
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+
+      // 1. Draw Connected Particles
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < -10) p.x = width + 10;
+        if (p.x > width + 10) p.x = -10;
+        if (p.y < -10) p.y = height + 10;
+        if (p.y > height + 10) p.y = -10;
+
+        p.pulseVal += p.pulseSpeed;
+        const currentAlpha = p.baseAlpha + Math.sin(p.pulseVal) * 0.15;
+
+        // Draw node
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `${p.colorPrefix}${Math.max(0.1, currentAlpha)})`;
+        ctx.fill();
+
+        // Connect nearby nodes
+        for (let j = i + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dx = p.x - p2.x;
+          const dy = p.y - p2.y;
+          const dist = Math.hypot(dx, dy);
+
+          if (dist < 120) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            const lineAlpha = (1 - dist / 120) * 0.18;
+            ctx.strokeStyle = `rgba(79, 70, 229, ${lineAlpha})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+      }
+
+      // 2. Draw Moving ECG Heartbeat Line
+      ecgX += ecgSpeed;
+      if (ecgX > width + 250) ecgX = 0;
+
+      const trailLength = 220;
+      const startX = Math.max(0, ecgX - trailLength);
+      const endX = Math.min(width, ecgX);
+
+      if (endX > startX) {
+        ctx.beginPath();
+        const baseY = ecgY();
+        for (let x = startX; x <= endX; x += 3) {
+          const y = baseY + getEcgOffset(x);
+          if (x === startX) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+
+        // Gradient fading trailing line
+        const grad = ctx.createLinearGradient(startX, 0, endX, 0);
+        grad.addColorStop(0, 'rgba(79, 70, 229, 0)');
+        grad.addColorStop(0.7, 'rgba(79, 70, 229, 0.25)');
+        grad.addColorStop(1, 'rgba(129, 140, 248, 0.75)');
+
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 2.2;
+        ctx.shadowColor = 'rgba(79, 70, 229, 0.45)';
+        ctx.shadowBlur = 8;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Glowing leading pulse dot
+        const headY = baseY + getEcgOffset(endX);
+        ctx.beginPath();
+        ctx.arc(endX, headY, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#4f46e5';
+        ctx.shadowColor = '#818cf8';
+        ctx.shadowBlur = 12;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      animationId = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    // Clean up if page navigates
+    window.addEventListener('beforeunload', () => {
+      cancelAnimationFrame(animationId);
+      window.removeEventListener('resize', resize);
+    });
+  })();
+</script>
+{% endblock %}

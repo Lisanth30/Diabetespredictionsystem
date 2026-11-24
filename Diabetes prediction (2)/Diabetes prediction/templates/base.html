@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}HealthGuard AI - Diabetes Risk Screening & Prediction System{% endblock %}</title>
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Custom Stylesheets -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/print.css') }}" media="print">
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="{{ 'has-sidebar' if current_user else '' }}">
+  {% if current_user %}
+  <script>
+    (function() {
+      try {
+        if (window.innerWidth > 992 && localStorage.getItem('hg_sidebar_collapsed') === 'true') {
+          document.body.classList.add('sidebar-collapsed');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  {% endif %}
+  <!-- Top-Class Biometric Cursor Halo & Pinpoint Follower (Desktop/Fine Pointers) -->
+  <div id="biometricCursorGlow" aria-hidden="true"></div>
+  <div id="biometricCursorDot" aria-hidden="true"></div>
+
+  <!-- Ambient Bioluminescent Clinical Aurora Background -->
+  <div class="app-ambient-aurora" aria-hidden="true">
+    <div class="aurora-orb aurora-orb-left"></div>
+    <div class="aurora-orb aurora-orb-right"></div>
+  </div>
+
+  <!-- World-Class Top Loading Telemetry Progress Bar -->
+  <div id="topProgressBar" aria-hidden="true"></div>
+
+  {% if current_user %}
+    <!-- Mobile Top Header Bar (visible on tablets/mobile <= 992px) -->
+    <div class="sidebar-mobile-topbar">
+      <button type="button" class="sidebar-mobile-toggle" id="sidebarMobileToggle" aria-label="Open Navigation Menu" aria-controls="appSidebar" aria-expanded="false">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <a href="{{ url_for('index') }}" class="brand-logo">
+        <div class="logo-icon">
+          <i class="fa-solid fa-heart-pulse"></i>
+        </div>
+        <span>Health<span>Guard</span> AI</span>
+      </a>
+      <div class="user-avatar-circle" title="Logged in as {{ current_user.name }}">
+        {{ current_user.name[0].upper() if current_user.name else 'U' }}
+      </div>
+    </div>
+
+    <!-- Mobile Backdrop Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+
+    <!-- Side Navigation Bar -->
+    <aside class="sidebar" id="appSidebar" aria-label="Primary Navigation">
+      <div class="sidebar-header">
+        <a href="{{ url_for('index') }}" class="brand-logo" title="HealthGuard AI">
+          <div class="logo-icon">
+            <i class="fa-solid fa-heart-pulse"></i>
+          </div>
+          <span class="sidebar-brand-text">Health<span>Guard</span> AI</span>
+        </a>
+        <button type="button" class="sidebar-collapse-btn" id="sidebarCollapseBtn" aria-label="Toggle Sidebar Width" title="Collapse Sidebar">
+          <i class="fa-solid fa-angles-left"></i>
+        </button>
+        <button type="button" class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close Navigation Menu">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav-section">
+        <div class="sidebar-section-label">
+          {{ 'Administration' if current_user.is_admin else 'Clinical Portal' }}
+        </div>
+        <ul class="sidebar-nav" id="sidebarNav">
+          {% if current_user.is_admin %}
+            <li>
+              <a href="{{ url_for('admin_dashboard') }}" class="{{ 'active' if request.endpoint == 'admin_dashboard' else '' }}" title="Admin Portal">
+                <i class="fa-solid fa-gauge-high"></i>
+                <span class="sidebar-link-text">Admin Portal</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('admin_users') }}" class="{{ 'active' if request.endpoint == 'admin_users' else '' }}" title="Users">
+                <i class="fa-solid fa-users-gear"></i>
+                <span class="sidebar-link-text">Users</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('admin_predictions') }}" class="{{ 'active' if request.endpoint == 'admin_predictions' else '' }}" title="All Screenings">
+                <i class="fa-solid fa-clipboard-list"></i>
+                <span class="sidebar-link-text">All Screenings</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('admin_model_performance') }}" class="{{ 'active' if request.endpoint == 'admin_model_performance' else '' }}" title="ML Model">
+                <i class="fa-solid fa-brain"></i>
+                <span class="sidebar-link-text">ML Model</span>
+              </a>
+            </li>
+          {% else %}
+            <li>
+              <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' else '' }}" title="Dashboard">
+                <i class="fa-solid fa-chart-line"></i>
+                <span class="sidebar-link-text">Dashboard</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('predict') }}" class="{{ 'active' if request.endpoint == 'predict' else '' }}" title="New Screening">
+                <i class="fa-solid fa-notes-medical"></i>
+                <span class="sidebar-link-text">New Screening</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('history') }}" class="{{ 'active' if request.endpoint == 'history' else '' }}" title="History">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span class="sidebar-link-text">History</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('trends') }}" class="{{ 'active' if request.endpoint == 'trends' else '' }}" title="Risk Trends">
+                <i class="fa-solid fa-arrow-trend-up"></i>
+                <span class="sidebar-link-text">Risk Trends</span>
+              </a>
+            </li>
+            <li>
+              <a href="{{ url_for('education') }}" class="{{ 'active' if request.endpoint == 'education' else '' }}" title="Health Guide">
+                <i class="fa-solid fa-book-medical"></i>
+                <span class="sidebar-link-text">Health Guide</span>
+              </a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user-card" title="Logged in as {{ current_user.name }}">
+          <div class="user-avatar-circle">
+            {{ current_user.name[0].upper() if current_user.name else 'U' }}
+          </div>
+          <div class="sidebar-user-info">
+            <span class="sidebar-user-name">{{ current_user.name.split(' ')[0] }}</span>
+            <span class="role-pill {{ 'admin-pill' if current_user.is_admin else '' }}">
+              {{ current_user.role }}
+            </span>
+          </div>
+        </div>
+        <a href="{{ url_for('logout') }}" class="sidebar-logout-btn" title="Sign Out">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          <span class="sidebar-link-text">Logout</span>
+        </a>
+      </div>
+    </aside>
+  {% else %}
+    <!-- Public Top Navigation Bar -->
+    <header class="navbar">
+      <div class="container nav-inner">
+        <a href="{{ url_for('index') }}" class="brand-logo">
+          <div class="logo-icon">
+            <i class="fa-solid fa-heart-pulse"></i>
+          </div>
+          <span>Health<span>Guard</span> AI</span>
+        </a>
+
+        <!-- Navigation Links -->
+        <ul class="nav-links" id="navLinks">
+          <li><a href="{{ url_for('index') }}" class="{{ 'active' if request.endpoint == 'index' else '' }}"><i class="fa-solid fa-house"></i> Home</a></li>
+          <li><a href="{{ url_for('education') }}" class="{{ 'active' if request.endpoint == 'education' else '' }}"><i class="fa-solid fa-book-medical"></i> Health Guide</a></li>
+        </ul>
+
+        <!-- Action Buttons -->
+        <div class="nav-actions">
+          <a href="{{ url_for('login') }}" class="btn btn-secondary btn-sm">Log In</a>
+          <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Get Started</a>
+
+          <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle Navigation">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+  {% endif %}
+
+  <div class="app-main-shell">
+    <!-- Flash Notifications -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="container flash-container">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              <span>{{ message }}</span>
+              <button class="alert-close" aria-label="Close Alert">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Main Content Wrapper -->
+    <main>
+      {% block content %}
+        {% if error_code %}
+          <div class="container" style="padding: 4rem 1rem; text-align: center;">
+            <h1 style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;">{{ error_code }}</h1>
+            <p style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 2rem;">{{ error_msg }}</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">Return Home</a>
+          </div>
+        {% endif %}
+      {% endblock %}
+    </main>
+
+    <!-- Medical Disclaimer Banner & Footer (Hidden on admin, patient, and auth/login pages) -->
+    {% block footer %}
+      {% if not current_user and request.endpoint not in ['login', 'register'] %}
+      <footer class="footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div>
+            <div class="brand-logo" style="color: white; margin-bottom: 1rem;">
+              <div class="logo-icon">
+                <i class="fa-solid fa-heart-pulse"></i>
+              </div>
+              <span>Health<span style="color: var(--accent);">Guard</span> AI</span>
+            </div>
+            <p style="font-size: 0.875rem; line-height: 1.6; color: #94a3b8;">
+              Advanced machine learning screening software calibrated for statistical diabetes risk stratification. Built for preventative education and proactive wellness management.
+            </p>
+            <p class="footer-disclaimer-note">
+              <i class="fa-solid fa-triangle-exclamation" style="color: #f59e0b;"></i>
+              <strong>Clinical Disclaimer:</strong> HealthGuard AI is an automated statistical tool. It does <strong>not</strong> render clinical diagnoses or prescribe therapeutic protocols.
+            </p>
+          </div>
+
+          <div>
+            <h4 style="color: white; font-size: 0.95rem; margin-bottom: 1rem;">Platform</h4>
+            <ul style="list-style: none; font-size: 0.875rem; display: flex; flex-direction: column; gap: 0.5rem;">
+              <li><a href="{{ url_for('index') }}">Home</a></li>
+              <li><a href="{{ url_for('education') }}">Health Education</a></li>
+              {% if current_user %}
+                <li><a href="{{ url_for('dashboard') }}">My Dashboard</a></li>
+                <li><a href="{{ url_for('predict') }}">Screening Assessment</a></li>
+              {% else %}
+                <li><a href="{{ url_for('login') }}">Member Login</a></li>
+                <li><a href="{{ url_for('register') }}">Create Account</a></li>
+              {% endif %}
+            </ul>
+          </div>
+
+          <div>
+            <h4 style="color: white; font-size: 0.95rem; margin-bottom: 1rem;">Clinical Markers</h4>
+            <ul style="list-style: none; font-size: 0.875rem; display: flex; flex-direction: column; gap: 0.5rem; color: #94a3b8;">
+              <li>Fasting Plasma Glucose</li>
+              <li>Body Mass Index (BMI)</li>
+              <li>Diastolic Blood Pressure</li>
+              <li>Serum Insulin & DPF</li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 style="color: white; font-size: 0.95rem; margin-bottom: 1rem;">Model Standards</h4>
+            <ul style="list-style: none; font-size: 0.875rem; display: flex; flex-direction: column; gap: 0.5rem; color: #94a3b8;">
+              <li>Logistic Regression</li>
+              <li>StandardScaler Preprocessing</li>
+              <li>Median Imputation</li>
+              <li>ROC-AUC Calibrated</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="footer-bottom">
+          <span>&copy; {{ year }} HealthGuard AI System. Developed for academic & screening purposes.</span>
+          <span>Secure Session &bull; Role-Based Access Control</span>
+        </div>
+      </div>
+    </footer>
+    {% endif %}
+    {% endblock %}
+  </div>
+
+  <!-- 🌐 7. Tamil + English Health Assistant Floating Launcher -->
+  <button type="button" id="healthAssistantLauncher" aria-label="Open Bilingual Health Assistant" onclick="openHealthAssistant()">
+    <span class="launcher-icon"><i class="fa-solid fa-notes-medical"></i></span>
+    <span>Health Assistant &bull; நல உதவியாளர்</span>
+  </button>
+
+  <!-- Bilingual Health Assistant Modal Dialog -->
+  <div id="healthAssistantModal" class="assistant-modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="assistant-modal-box">
+      <div class="assistant-header">
+        <div class="assistant-title-group">
+          <h3><i class="fa-solid fa-heart-pulse"></i> Health Assistant &bull; மருத்துவ நல உதவியாளர்</h3>
+          <p>Bilingual Clinical Educational Assistant &bull; English &amp; தமிழ் விளக்கங்கள்</p>
+        </div>
+        <button type="button" class="assistant-close-btn" onclick="closeHealthAssistant()" aria-label="Close Assistant">&times;</button>
+      </div>
+
+      <!-- Language Switcher Bar -->
+      <div class="assistant-lang-bar">
+        <span style="font-size: 0.775rem; font-weight: 700; color: var(--text-muted);">
+          <i class="fa-solid fa-language"></i> Display Language / காட்சி மொழி:
+        </span>
+        <div class="assistant-lang-switch">
+          <button type="button" class="assistant-lang-btn active" data-lang="bilingual" onclick="setAssistantLang('bilingual')">🌐 Bilingual (இருமொழி)</button>
+          <button type="button" class="assistant-lang-btn" data-lang="en" onclick="setAssistantLang('en')">🇬🇧 English</button>
+          <button type="button" class="assistant-lang-btn" data-lang="ta" onclick="setAssistantLang('ta')">🇮🇳 தமிழ்</button>
+        </div>
+      </div>
+
+      <!-- Quick Question Prompt Chips -->
+      <div class="assistant-quick-prompts">
+        <button type="button" class="quick-prompt-chip" onclick="askAssistant('bmi')">
+          <i class="fa-solid fa-weight-scale" style="color: #7c3aed;"></i> What is BMI?
+        </button>
+        <button type="button" class="quick-prompt-chip" onclick="askAssistant('glucose')">
+          <i class="fa-solid fa-droplet" style="color: #ef4444;"></i> What does glucose mean?
+        </button>
+        <button type="button" class="quick-prompt-chip" onclick="askAssistant('prediction')">
+          <i class="fa-solid fa-chart-pie" style="color: #4f46e5;"></i> What does my prediction result mean?
+        </button>
+        <button type="button" class="quick-prompt-chip" onclick="askAssistant('prevention')">
+          <i class="fa-solid fa-shield-heart" style="color: #10b981;"></i> How to lower diabetes risk?
+        </button>
+        <button type="button" class="quick-prompt-chip" onclick="askAssistant('insulin')">
+          <i class="fa-solid fa-vial" style="color: #8b5cf6;"></i> What is Insulin?
+        </button>
+      </div>
+
+      <!-- Content Area -->
+      <div class="assistant-content-body" id="assistantContentBody">
+        <!-- Welcoming Initial Prompt Card -->
+        <div class="assistant-answer-card">
+          <div class="assistant-answer-title">
+            <i class="fa-solid fa-hand-holding-medical" style="color: var(--primary);"></i>
+            <span>Welcome to HealthGuard Assistant &bull; நல உதவியாளருக்கு வரவேற்கிறோம்</span>
+          </div>
+          <div class="bilingual-box">
+            <div class="lang-block english-block" id="welcomeEnglishBlock">
+              <span class="lang-tag-pill">English</span>
+              <p style="margin: 0;">Hello! I am your AI clinical educational assistant. Click any topic above or type a query below to learn about BMI, blood glucose, and understanding your diabetes risk screening results in simple, evidence-based terms.</p>
+            </div>
+            <div class="lang-block tamil-block" id="welcomeTamilBlock">
+              <span class="lang-tag-pill">தமிழ்</span>
+              <p style="margin: 0;">வணக்கம்! நான் உங்கள் மருத்துவ நலக் கல்வி உதவியாளர். BMI (உடல் நிறை குறியீட்டெண்), இரத்த சர்க்கரை அளவு மற்றும் உங்கள் கணிப்பு முடிவுகளின் விளக்கம் பற்றி தமிழில் அறிய மேலே உள்ள தலைப்புகளில் ஒன்றைத் தேர்ந்தெடுக்கவும் அல்லது உங்கள் கேள்வியை கீழே உள்ளிடவும்.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search & Input Box -->
+      <div class="assistant-search-box">
+        <input type="text" id="assistantQueryInput" class="assistant-search-input" placeholder="Ask in English or தமிழ் (e.g., glucose, bmi, சர்க்கரை, கணிப்பு)..." onkeydown="handleAssistantKey(event)">
+        <button type="button" class="btn btn-primary btn-sm" onclick="handleAssistantSubmit()" style="padding: 0.5rem 1rem;">
+          <i class="fa-solid fa-paper-plane"></i> Ask
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Core Scripts -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

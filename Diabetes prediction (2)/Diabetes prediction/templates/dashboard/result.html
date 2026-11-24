@@ -1,0 +1,2018 @@
+{% extends 'base.html' %}
+
+{% block title %}Screening Assessment Results - HealthGuard AI{% endblock %}
+
+{% block content %}
+<div class="container result-page-container">
+
+  <!-- Header & Actions -->
+  <header class="result-header">
+    <div class="result-header-meta">
+      <div class="result-meta-tags">
+        <span class="badge badge-neutral"><i class="fa-solid fa-hashtag"></i> Assessment #HG-{{ prediction.id }}</span>
+        <span class="result-meta-date"><i class="fa-regular fa-clock"></i> {{ prediction.created_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+        {% if prediction.risk_level == 'High' %}
+          <span class="badge badge-danger"><i class="fa-solid fa-circle-exclamation"></i> High Risk</span>
+        {% elif prediction.risk_level == 'Medium' %}
+          <span class="badge badge-caution"><i class="fa-solid fa-triangle-exclamation"></i> Moderate Risk</span>
+        {% else %}
+          <span class="badge badge-safe"><i class="fa-solid fa-shield-heart"></i> Low Risk</span>
+        {% endif %}
+      </div>
+      <h1 class="result-title">Clinical Screening Assessment Summary</h1>
+      <p class="result-subtitle">Algorithmic risk evaluation calibrated against ADA &amp; WHO clinical reference standards</p>
+    </div>
+    <div class="result-header-actions">
+      <a href="{{ url_for('download_pdf', pred_id=prediction.id) }}" class="btn btn-primary btn-result-action">
+        <i class="fa-solid fa-file-arrow-down"></i> <span>Download PDF Report</span>
+      </a>
+      <a href="{{ url_for('print_report', pred_id=prediction.id) }}" target="_blank" class="btn btn-secondary btn-result-action">
+        <i class="fa-solid fa-print"></i> <span>Print Summary</span>
+      </a>
+      <a href="{{ url_for('predict') }}" class="btn btn-secondary btn-result-action">
+        <i class="fa-solid fa-plus"></i> <span>New Assessment</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- 4. Risk Change Alert (Compared with user's previous result) -->
+  {% if risk_change and risk_change.has_previous %}
+    <div class="risk-change-alert-card {% if risk_change.direction == 'increased' %}change-alert-warning{% elif risk_change.direction == 'decreased' %}change-alert-success{% else %}change-alert-neutral{% endif %}">
+      <div class="change-alert-header">
+        <div class="change-alert-icon">
+          {% if risk_change.direction == 'increased' %}
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          {% elif risk_change.direction == 'decreased' %}
+            <i class="fa-solid fa-circle-check"></i>
+          {% else %}
+            <i class="fa-solid fa-arrows-left-right"></i>
+          {% endif %}
+        </div>
+        <div class="change-alert-title-wrap">
+          <div class="change-alert-badge">
+            {% if risk_change.direction == 'increased' %}
+              ⚠ Prediction probability changed (+{{ risk_change.diff }}%)
+            {% elif risk_change.direction == 'decreased' %}
+              ✓ Prediction probability improved ({{ risk_change.diff }}%)
+            {% else %}
+              ↔ Prediction probability steady (±0.0%)
+            {% endif %}
+          </div>
+          <h3 class="change-alert-heading">Biometric Trajectory Comparison</h3>
+        </div>
+      </div>
+
+      <div class="change-comparison-pills">
+        <div class="comparison-pill prev-pill">
+          <span class="pill-label">Previous prediction:</span>
+          <span class="pill-val">{{ risk_change.previous_prob }}%</span>
+          <span class="pill-date">({{ risk_change.previous_date.strftime('%b %d, %Y') }})</span>
+        </div>
+        <div class="comparison-arrow">
+          <i class="fa-solid fa-arrow-right"></i>
+        </div>
+        <div class="comparison-pill curr-pill">
+          <span class="pill-label">Current prediction:</span>
+          <span class="pill-val">{{ risk_change.current_prob }}%</span>
+          <span class="pill-date">(Latest Screening)</span>
+        </div>
+      </div>
+
+      <div class="change-alert-guidance">
+        <p>
+          {% if risk_change.direction == 'increased' %}
+            <strong>Clinical Guidance:</strong> An observed increase in screening probability reflects recent metabolic biomarkers (such as higher fasting blood sugar or blood pressure readings) rather than a definitive diagnosis of diabetes. We encourage scheduling an appropriate professional follow-up with your physician or healthcare provider for standard diagnostic laboratory tests (HbA1c & Fasting Plasma Glucose).
+          {% elif risk_change.direction == 'decreased' %}
+            <strong>Clinical Guidance:</strong> Your screening probability has decreased compared to your previous assessment, reflecting positive biomarker trends. Maintain your active physical and nutritional routines, and continue routine preventative monitoring.
+          {% else %}
+            <strong>Clinical Guidance:</strong> Your metabolic indicators remain steady relative to your previous screening. Maintain balanced lifestyle habits and continue routine annual check-ups.
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Main Result Summary Card: Gauge + Risk Narrative -->
+  <section class="result-hero-grid" aria-label="Screening Overview">
+    <!-- Risk Gauge Box -->
+    <div class="risk-gauge-box gauge-card-elevated {% if prediction.risk_level == 'High' %}risk-border-high{% elif prediction.risk_level == 'Medium' %}risk-border-medium{% else %}risk-border-low{% endif %}">
+      <div class="gauge-top-label">
+        <span class="gauge-chip">Screening Assessment</span>
+      </div>
+
+      <div class="gauge-circle">
+        <svg viewBox="0 0 100 100">
+          <circle class="bg-circle" cx="50" cy="50" r="40"></circle>
+          <circle class="progress-circle" id="riskCircle" cx="50" cy="50" r="40"
+            stroke="{% if prediction.risk_level == 'High' %}#ef4444{% elif prediction.risk_level == 'Medium' %}#f59e0b{% else %}#10b981{% endif %}"
+            stroke-dasharray="251.2"
+            stroke-dashoffset="251.2"
+          ></circle>
+        </svg>
+        <div class="gauge-text">
+          <div class="gauge-percent" style="color: {% if prediction.risk_level == 'High' %}#ef4444{% elif prediction.risk_level == 'Medium' %}#f59e0b{% else %}#10b981{% endif %};">
+            {{ prediction.probability }}%
+          </div>
+          <div class="gauge-sub">Likelihood</div>
+        </div>
+      </div>
+
+      <div class="gauge-badge-wrapper">
+        {% if prediction.risk_level == 'High' %}
+          <span class="badge badge-danger gauge-category-badge">
+            <span class="pulse-dot pulse-danger"></span>
+            <i class="fa-solid fa-triangle-exclamation"></i> High Risk Category
+          </span>
+        {% elif prediction.risk_level == 'Medium' %}
+          <span class="badge badge-caution gauge-category-badge">
+            <span class="pulse-dot pulse-caution"></span>
+            <i class="fa-solid fa-circle-exclamation"></i> Moderate Risk Category
+          </span>
+        {% else %}
+          <span class="badge badge-safe gauge-category-badge">
+            <span class="pulse-dot pulse-safe"></span>
+            <i class="fa-solid fa-shield-heart"></i> Low Risk Category
+          </span>
+        {% endif %}
+      </div>
+
+      <!-- Quick biometric glance indicators -->
+      <div class="gauge-quick-stats">
+        <div class="quick-stat-item">
+          <span class="quick-stat-label">Fasting Glucose</span>
+          <span class="quick-stat-val">{{ prediction.glucose }} <small>mg/dL</small></span>
+        </div>
+        <div class="quick-stat-divider"></div>
+        <div class="quick-stat-item">
+          <span class="quick-stat-label">Body Mass Index</span>
+          <span class="quick-stat-val">{{ prediction.bmi }} <small>kg/m²</small></span>
+        </div>
+      </div>
+
+      <div class="gauge-footer-note">
+        <i class="fa-solid fa-brain" style="font-size: 0.75rem; color: var(--primary);"></i>
+        <span>Logistic Regression Screening Score</span>
+      </div>
+    </div>
+
+    <!-- Narrative & Interpretation Card -->
+    <div class="card result-narrative-card">
+      <div class="narrative-header">
+        <div class="narrative-title-group">
+          <div class="narrative-icon-box">
+            <i class="fa-solid fa-stethoscope"></i>
+          </div>
+          <div>
+            <h2 class="narrative-heading">Clinical Screening Assessment</h2>
+            <span class="narrative-subheading">Personalized algorithmic clinical interpretation</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="narrative-body-text">
+        {{ analysis.risk_desc }}
+      </p>
+
+      <div class="care-provider-callout">
+        <div class="callout-header">
+          <i class="fa-solid fa-user-doctor"></i>
+          <h4>Key Takeaway for Your Care Provider</h4>
+        </div>
+        <p class="callout-text">
+          {% if prediction.risk_level == 'High' %}
+            Your recorded metabolic profile shows multiple indicators above baseline reference standards, particularly glycemic and adiposity markers. We advise requesting a comprehensive metabolic panel and fasting blood sugar confirmation.
+          {% elif prediction.risk_level == 'Medium' %}
+            Several parameters reside in borderline or prediabetic categories. Clinical lifestyle interventions (modest weight loss, physical activity, glycemic diet) often yield profound reversal of metabolic progression.
+          {% else %}
+            Your entered parameters fall primarily within normal clinical ranges, reflecting low current screening risk. Continue proactive annual checkups and balanced wellness habits.
+          {% endif %}
+        </p>
+      </div>
+
+      {% if prediction.notes %}
+        <div class="user-notes-card">
+          <i class="fa-solid fa-note-sticky"></i>
+          <div><strong>Personal Note:</strong> {{ prediction.notes }}</div>
+        </div>
+      {% endif %}
+
+      <!-- Interactive Action Plan Trigger Button (reveals the prevention protocol on click) -->
+      {% set proto = analysis.prevention_protocol %}
+      {% if proto %}
+        <div class="action-plan-trigger-wrap">
+          <button type="button" id="toggleActionPlanBtn" class="btn-action-plan-cta {% if prediction.risk_level == 'High' %}cta-danger{% elif prediction.risk_level == 'Medium' %}cta-caution{% else %}cta-safe{% endif %}" onclick="togglePreventionPlan()">
+            <div class="cta-icon-wrapper">
+              <i class="fa-solid fa-shield-heart"></i>
+            </div>
+            <div class="cta-text-wrapper">
+              <div class="cta-primary-title" id="actionPlanBtnTitle">
+                {% if prediction.risk_level == 'High' %}
+                  View High-Risk Prevention Action Plan
+                {% elif prediction.risk_level == 'Medium' %}
+                  View Moderate-Risk Prevention Action Plan
+                {% else %}
+                  View Wellness &amp; Prevention Action Plan
+                {% endif %}
+              </div>
+              <div class="cta-secondary-hint" id="actionPlanBtnHint">
+                Click to open personalized clinical protocols &amp; daily habits &darr;
+              </div>
+            </div>
+            <div class="cta-arrow-badge" id="actionPlanArrowBadge">
+              <i class="fa-solid fa-chevron-down" id="actionPlanChevron"></i>
+            </div>
+          </button>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- Simple Explanation, Food Guide & How to Control (Always Visible Immediately After Prediction) -->
+  {% set proto = analysis.prevention_protocol %}
+  {% if proto and proto.simple_guide %}
+    {% set guide = proto.simple_guide %}
+    <section id="simpleCareGuide" class="simple-guide-card simple-guide-{{ guide.theme }}" aria-label="Simple Result Guide, Food Plan and Control Plan">
+      <!-- 1. Simple Plain-Language Explanation -->
+      <div class="simple-guide-header simple-guide-header-{{ guide.theme }}">
+        <div class="simple-guide-icon simple-guide-icon-{{ guide.theme }}">
+          {% if prediction.risk_level == 'High' %}
+            <i class="fa-solid fa-heart-circle-exclamation"></i>
+          {% elif prediction.risk_level == 'Medium' %}
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          {% else %}
+            <i class="fa-solid fa-shield-heart"></i>
+          {% endif %}
+        </div>
+        <div class="simple-guide-header-text">
+          <div class="simple-guide-badge-row">
+            <span class="badge badge-{{ guide.theme }}">{{ guide.condition_label }}</span>
+            <span class="simple-guide-kicker">Simple Result Explanation</span>
+          </div>
+          <h3 class="simple-guide-headline">{{ guide.simple_headline }}</h3>
+          <p class="simple-guide-desc">{{ guide.simple_explanation }}</p>
+        </div>
+      </div>
+
+      <!-- Critical Warning Symptoms (Only Shown for High / Critical Risk) -->
+      {% if guide.warning_signs %}
+        <div class="critical-warning-box">
+          <div class="critical-warning-title">
+            <i class="fa-solid fa-kit-medical"></i>
+            <span>Critical Warning Signs — See a Doctor Right Away If You Notice:</span>
+          </div>
+          <div class="critical-warning-chips">
+            {% for sign in guide.warning_signs %}
+              <span class="critical-warning-chip">
+                <i class="fa-solid fa-circle-exclamation"></i> {{ sign }}
+              </span>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- 2. Food Guide: What to Eat & What to Avoid -->
+      <div class="simple-guide-section">
+        <div class="simple-section-heading">
+          <i class="fa-solid fa-utensils" style="color: var(--primary);"></i>
+          <div>
+            <h4>Food Guide: What to Eat &amp; What to Avoid</h4>
+            <p>Simple daily food choices matched to your <strong>{{ guide.condition_label }}</strong> condition</p>
+          </div>
+        </div>
+
+        <div class="food-compare-grid">
+          <div class="food-box food-box-eat">
+            <div class="food-box-title">
+              <i class="fa-solid fa-circle-check"></i>
+              <span>Foods to Take Daily</span>
+            </div>
+            <ul class="food-list">
+              {% for item in guide.foods_to_eat %}
+                <li><i class="fa-solid fa-check"></i><span>{{ item }}</span></li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <div class="food-box food-box-avoid">
+            <div class="food-box-title">
+              <i class="fa-solid fa-circle-xmark"></i>
+              <span>Foods to Avoid / Limit</span>
+            </div>
+            <ul class="food-list">
+              {% for item in guide.foods_to_avoid %}
+                <li><i class="fa-solid fa-xmark"></i><span>{{ item }}</span></li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+
+        <!-- Sample Daily Meal Plan -->
+        {% if guide.sample_meal_plan %}
+          <div class="meal-plan-strip">
+            <div class="meal-plan-strip-title">
+              <i class="fa-solid fa-bowl-food"></i> Simple Daily Meal Idea
+            </div>
+            <div class="meal-plan-grid">
+              {% for slot in guide.sample_meal_plan %}
+                <div class="meal-slot-card">
+                  <span class="meal-slot-label">{{ slot['meal'] }}</span>
+                  <p class="meal-slot-items">{{ slot['menu'] }}</p>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- 3. How to Control & What to Do Step-by-Step -->
+      <div class="simple-guide-section">
+        <div class="simple-section-heading">
+          <i class="fa-solid fa-list-check" style="color: {% if prediction.risk_level == 'High' %}#dc2626{% elif prediction.risk_level == 'Medium' %}#d97706{% else %}#059669{% endif %};"></i>
+          <div>
+            <h4>{{ guide.control_title }}</h4>
+            <p>Easy step-by-step actions you can start following today</p>
+          </div>
+        </div>
+
+        <div class="control-steps-grid">
+          {% for step in guide.control_steps %}
+            <div class="control-step-card control-step-{{ guide.theme }}">
+              <div class="control-step-title">{{ step.title }}</div>
+              <p class="control-step-detail">{{ step.detail }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+  {% endif %}
+
+  <!-- Evidence-Based Prevention Protocol & Action Plan (Initially Hidden - Opens upon clicking the action button) -->
+  {% if proto %}
+  <section id="preventionProtocol" class="prevention-protocol-card {% if prediction.risk_level == 'High' %}high-risk-theme{% endif %} collapsible-action-plan" style="display: none;" aria-label="Evidence-Based Prevention Protocol">
+    
+    <!-- Header Banner -->
+    <div class="prevention-banner {% if prediction.risk_level == 'High' %}high-theme{% elif prediction.risk_level == 'Medium' %}medium-theme{% else %}low-theme{% endif %}">
+      <div class="prevention-banner-icon">
+        {% if prediction.risk_level == 'High' %}
+          <i class="fa-solid fa-heart-circle-exclamation"></i>
+        {% elif prediction.risk_level == 'Medium' %}
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        {% else %}
+          <i class="fa-solid fa-shield-halved"></i>
+        {% endif %}
+      </div>
+      <div class="prevention-banner-content">
+        <div class="prevention-tag-row">
+          <span class="badge {% if prediction.risk_level == 'High' %}badge-danger{% elif prediction.risk_level == 'Medium' %}badge-caution{% else %}badge-safe{% endif %}">
+            {{ proto.urgency_level }}
+          </span>
+          <span class="prevention-protocol-label">
+            Evidence-Based Prevention Protocol
+          </span>
+        </div>
+        <h3 class="prevention-main-title">{{ proto.alert_title }}</h3>
+        <p class="prevention-sub-title">{{ proto.alert_subtitle }}</p>
+      </div>
+    </div>
+
+    <!-- Personalized Biomarker Alerts (if any triggered) -->
+    {% if proto.personalized_alerts %}
+      <div class="personalized-alerts-section">
+        <h4 class="section-micro-heading">
+          <i class="fa-solid fa-bullseye" style="color: #e11d48;"></i> Identified High-Impact Risk Drivers
+        </h4>
+        <div class="personalized-alerts-grid">
+          {% for alert in proto.personalized_alerts %}
+            <div class="personalized-alert-item">
+              <i class="fa-solid fa-{{ alert.icon }} alert-mini-icon"></i>
+              <div>
+                <h5>{{ alert.title }}</h5>
+                <p>{{ alert.text }}</p>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Core Pillars of Prevention -->
+    <div class="prevention-pillars-section">
+      <div class="pillars-section-header">
+        <div>
+          <h3 class="pillars-section-title">
+            {% if prediction.risk_level == 'High' %}
+              Actionable Pillars: What to Do to Prevent Progression
+            {% elif prediction.risk_level == 'Medium' %}
+              Early Intervention Pillars: Reversing Elevated Risk
+            {% else %}
+              Long-Term Wellness Pillars: Maintaining Low Risk
+            {% endif %}
+          </h3>
+          <p class="pillars-section-subtitle">
+            Follow these targeted clinical, nutritional, and physical steps to lower blood sugar and boost insulin sensitivity.
+          </p>
+        </div>
+        {% if proto.weight_target_note %}
+          <div class="weight-target-badge">
+            <i class="fa-solid fa-scale-balanced" style="color: #f59e0b;"></i> {{ proto.weight_target_note }}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="prevention-pillars-grid">
+        {% for pillar in proto.pillars %}
+          <div class="pillar-card {{ pillar.badge_class }}-pillar">
+            <div class="pillar-card-header">
+              <div class="pillar-title-wrap">
+                <div class="pillar-icon-box">
+                  <i class="fa-solid fa-{{ pillar.icon }}"></i>
+                </div>
+                <h4 class="pillar-title">{{ pillar.title }}</h4>
+              </div>
+              <span class="badge badge-{{ pillar.badge_class }}" style="font-size: 0.725rem; padding: 0.25rem 0.6rem;">
+                {{ pillar.badge }}
+              </span>
+            </div>
+            <div class="pillar-summary">{{ pillar.summary }}</div>
+            <ul class="pillar-steps-list">
+              {% for step in pillar.steps %}
+                <li class="pillar-step-item">
+                  <i class="fa-solid fa-circle-check pillar-step-check"></i>
+                  <span>{{ step }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Daily Prevention Habit Checklist -->
+    <div class="daily-tracker-box">
+      <div class="daily-tracker-header">
+        <div class="daily-tracker-title">
+          <i class="fa-solid fa-calendar-check" style="color: var(--primary);"></i>
+          <span>Daily Prevention Habit Tracker</span>
+        </div>
+        <span class="tracker-progress-pill" id="habitProgressBadge">
+          0 of {{ proto.daily_checklist|length }} completed today
+        </span>
+      </div>
+      <p class="daily-tracker-desc">
+        Click to check off the evidence-based prevention habits you practice today. Your daily progress is saved locally.
+      </p>
+      <div class="habit-checklist-grid" id="habitGrid">
+        {% for item in proto.daily_checklist %}
+          <div class="habit-item" data-index="{{ loop.index0 }}" onclick="toggleHabit({{ loop.index0 }})">
+            <input type="checkbox" class="habit-checkbox" id="habit-{{ loop.index0 }}" onclick="event.stopPropagation(); toggleHabit({{ loop.index0 }});">
+            <label class="habit-label" for="habit-{{ loop.index0 }}" onclick="event.preventDefault();">
+              {{ item.task }}
+            </label>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Questions to Ask Your Doctor Box -->
+    {% if proto.questions_for_doctor %}
+      <div class="doctor-questions-card">
+        <div class="doctor-questions-header-row">
+          <div class="doctor-questions-header">
+            <i class="fa-solid fa-clipboard-question"></i>
+            <h4>Key Questions to Bring to Your Physician Appointment</h4>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm copy-questions-btn" onclick="copyDoctorQuestions()">
+            <i class="fa-solid fa-copy"></i> <span id="copyQuestionsText">Copy Questions</span>
+          </button>
+        </div>
+        <p class="doctor-questions-desc">
+          Take these recommended questions to your next clinical visit to discuss confirmatory diagnostics and personalized prevention:
+        </p>
+        <ul class="doctor-questions-list" id="doctorQuestionsList">
+          {% for q in proto.questions_for_doctor %}
+            <li><strong>{{ q }}</strong></li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
+    <!-- Footer Collapse Button for convenient navigation -->
+    <div class="action-plan-footer-collapse">
+      <button type="button" class="btn btn-secondary btn-sm" onclick="togglePreventionPlan(false)">
+        <i class="fa-solid fa-chevron-up"></i> Hide Prevention Action Plan
+      </button>
+    </div>
+
+  </section>
+  {% endif %}
+
+  <!-- 🧩 Diabetes Risk Factor Map: YOUR RISK PROFILE -->
+  {% if analysis.risk_factor_map %}
+  <section class="risk-profile-map-card" aria-label="Diabetes Risk Profile Map">
+    <div class="risk-profile-header">
+      <div>
+        <h3 class="profile-main-title">
+          <i class="fa-solid fa-chart-bar" style="color: var(--primary);"></i>
+          <span>YOUR RISK PROFILE</span>
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0.25rem 0 0 0;">
+          Relative clinical impact of individual metabolic biomarkers contributing to overall likelihood
+        </p>
+      </div>
+      <span class="badge badge-neutral" style="font-size: 0.8rem; font-weight: 700;">
+        <i class="fa-solid fa-scale-balanced"></i> Feature Importance Map
+      </span>
+    </div>
+
+    <div class="profile-map-list">
+      {% for factor in analysis.risk_factor_map %}
+        <div class="profile-map-row">
+          <div class="profile-factor-name">
+            <span>{{ factor.name }}</span>
+          </div>
+
+          <div class="profile-bar-container">
+            <!-- Exact ASCII Block Representation requested by user -->
+            <span class="bar-ascii-text {{ factor.badge_class }}" title="{{ factor.pct }}% Impact">{{ factor.bar_str }}</span>
+            <div class="profile-meter-track" title="{{ factor.pct }}% Impact">
+              <div class="profile-meter-fill {{ factor.badge_class }}" style="width: {{ factor.pct }}%;"></div>
+            </div>
+          </div>
+
+          <div class="profile-factor-meta">
+            <span class="profile-reading-val">{{ factor.value_str }}</span>
+            <span class="impact-chip {{ factor.badge_class }}">{{ factor.impact }}</span>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div style="margin-top: 1rem; padding: 0.85rem 1rem; background: var(--surface-alt); border-radius: var(--radius-sm); border: 1px solid rgba(226, 232, 240, 0.8); font-size: 0.825rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.6rem;">
+      <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i>
+      <span>Clinical Insight: Fasting glucose and body mass index serve as primary glycemic drivers in the diagnostic risk model, followed by cardiovascular and genetic co-factors.</span>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Detailed Parameter Breakdown Section -->
+  <section class="card result-section-card" aria-label="Clinical Parameters">
+    <div class="card-header result-section-header">
+      <div>
+        <div class="card-title">Biomarker &amp; Clinical Parameter Breakdown</div>
+        <span class="card-subtitle">Detailed evaluation against ADA (American Diabetes Association) &amp; WHO clinical standards</span>
+      </div>
+      <span class="badge badge-neutral"><i class="fa-solid fa-sliders"></i> 8 Biometric Factors</span>
+    </div>
+
+    <div class="factors-grid result-factors-grid">
+      {% for factor in analysis.parameter_factors %}
+        <div class="factor-card factor-card-modern {{ factor.level }}">
+          <div class="factor-header">
+            <span class="factor-name">{{ factor.label }}</span>
+            <span class="badge badge-{{ factor.level }}">{{ factor.status }}</span>
+          </div>
+          <div class="factor-val-row">
+            <span class="factor-val">{{ factor.value }}</span>
+            <span class="factor-unit">{{ factor.unit }}</span>
+          </div>
+          <div class="factor-range-wrap">
+            <span class="factor-range-label">Standard Reference:</span>
+            <span class="factor-range-val">{{ factor.normal_range }}</span>
+          </div>
+          <div class="factor-meter-bar">
+            <div class="factor-meter-fill fill-{{ factor.level }}"></div>
+          </div>
+          <div class="factor-comment">
+            {{ factor.comment }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Evidence-Based Preventive Health Recommendations -->
+  <section class="card result-section-card" aria-label="Lifestyle Guidance">
+    <div class="card-header result-section-header">
+      <div>
+        <div class="card-title">Additional Educational Lifestyle Guidance</div>
+        <span class="card-subtitle">Evidence-based lifestyle and preventive health guidelines from clinical literature</span>
+      </div>
+      <span class="badge badge-neutral"><i class="fa-solid fa-heart-pulse"></i> Proactive Wellness</span>
+    </div>
+
+    <div class="recommendations-grid">
+      {% for rec in analysis.recommendations %}
+        <div class="rec-item rec-item-modern">
+          <div class="rec-icon">
+            <i class="fa-solid fa-{{ rec.icon }}"></i>
+          </div>
+          <div class="rec-content">
+            <h4>{{ rec.title }}</h4>
+            <p>{{ rec.text }}</p>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Bottom Navigation Actions -->
+  <nav class="result-bottom-nav" aria-label="Result Page Actions">
+    <a href="{{ url_for('history') }}" class="btn btn-secondary btn-nav-action">
+      <i class="fa-solid fa-clock-rotate-left"></i> View Full Screening History
+    </a>
+    <div class="bottom-nav-group">
+      <a href="{{ url_for('trends') }}" class="btn btn-secondary btn-nav-action">
+        <i class="fa-solid fa-arrow-trend-up"></i> Track Risk Trends Over Time
+      </a>
+      <a href="{{ url_for('predict') }}" class="btn btn-primary btn-nav-action">
+        <i class="fa-solid fa-plus"></i> Run Another Assessment
+      </a>
+    </div>
+  </nav>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Animate Gauge Progress on Load
+  document.addEventListener('DOMContentLoaded', () => {
+    const riskCircle = document.getElementById('riskCircle');
+    const prob = parseFloat("{{ prediction.probability }}") || 0;
+    
+    // Circle circumference = 2 * PI * 40 ~= 251.2
+    const circumference = 251.2;
+    const offset = circumference - (prob / 100) * circumference;
+
+    setTimeout(() => {
+      if (riskCircle) {
+        riskCircle.style.strokeDashoffset = offset;
+      }
+    }, 150);
+
+    // Initialize Habit Tracker from LocalStorage
+    initHabitTracker();
+  });
+
+  // Action Plan Interactive Reveal / Collapse Toggle
+  function togglePreventionPlan(forceState) {
+    const protocolCard = document.getElementById('preventionProtocol');
+    const toggleBtn = document.getElementById('toggleActionPlanBtn');
+    const btnTitle = document.getElementById('actionPlanBtnTitle');
+    const btnHint = document.getElementById('actionPlanBtnHint');
+    const chevron = document.getElementById('actionPlanChevron');
+
+    if (!protocolCard) return;
+
+    const isHidden = window.getComputedStyle(protocolCard).display === 'none';
+    const shouldOpen = (forceState !== undefined) ? forceState : isHidden;
+
+    if (shouldOpen) {
+      protocolCard.style.display = 'block';
+      protocolCard.classList.remove('collapsing');
+      protocolCard.classList.add('fade-slide-down');
+
+      if (toggleBtn) toggleBtn.classList.add('is-expanded');
+      if (btnTitle) btnTitle.textContent = 'Hide Prevention Action Plan';
+      if (btnHint) btnHint.textContent = 'Click to collapse this action plan section';
+      if (chevron) chevron.className = 'fa-solid fa-chevron-up';
+
+      // Smooth scroll to the revealed action plan
+      setTimeout(() => {
+        protocolCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    } else {
+      protocolCard.classList.remove('fade-slide-down');
+      protocolCard.style.display = 'none';
+
+      if (toggleBtn) toggleBtn.classList.remove('is-expanded');
+      
+      const riskLevel = "{{ prediction.risk_level }}";
+      if (btnTitle) {
+        if (riskLevel === 'High') {
+          btnTitle.textContent = 'View High-Risk Prevention Action Plan';
+        } else if (riskLevel === 'Medium') {
+          btnTitle.textContent = 'View Moderate-Risk Prevention Action Plan';
+        } else {
+          btnTitle.textContent = 'View Wellness & Prevention Action Plan';
+        }
+      }
+      if (btnHint) {
+        btnHint.textContent = 'Click to open personalized clinical protocols & daily habits \u2193';
+      }
+      if (chevron) {
+        chevron.className = 'fa-solid fa-chevron-down';
+      }
+
+      // Smoothly return focus/view back to the CTA button
+      if (toggleBtn) {
+        toggleBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }
+
+  // Habit Tracker LocalStorage Implementation
+  const predId = "{{ prediction.id }}";
+  const storageKey = 'healthguard_habits_' + predId;
+
+  function initHabitTracker() {
+    let saved = [];
+    try {
+      saved = JSON.parse(localStorage.getItem(storageKey)) || [];
+    } catch(e) {
+      saved = [];
+    }
+
+    const items = document.querySelectorAll('#habitGrid .habit-item');
+    items.forEach((item, idx) => {
+      const checkbox = item.querySelector('.habit-checkbox');
+      if (saved.includes(idx)) {
+        checkbox.checked = true;
+        item.classList.add('completed');
+      } else {
+        checkbox.checked = false;
+        item.classList.remove('completed');
+      }
+    });
+
+    updateHabitBadge(saved.length, items.length);
+  }
+
+  function toggleHabit(idx) {
+    const items = document.querySelectorAll('#habitGrid .habit-item');
+    let saved = [];
+    try {
+      saved = JSON.parse(localStorage.getItem(storageKey)) || [];
+    } catch(e) {
+      saved = [];
+    }
+
+    const exists = saved.indexOf(idx);
+    if (exists > -1) {
+      saved.splice(exists, 1);
+    } else {
+      saved.push(idx);
+    }
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(saved));
+    } catch(e) {}
+
+    items.forEach((item, i) => {
+      const checkbox = item.querySelector('.habit-checkbox');
+      if (saved.includes(i)) {
+        checkbox.checked = true;
+        item.classList.add('completed');
+      } else {
+        checkbox.checked = false;
+        item.classList.remove('completed');
+      }
+    });
+
+    updateHabitBadge(saved.length, items.length);
+  }
+
+  function updateHabitBadge(completed, total) {
+    const badge = document.getElementById('habitProgressBadge');
+    if (badge && total > 0) {
+      if (completed === total) {
+        badge.textContent = `All ${total} habits completed today! \u2728`;
+        badge.style.background = '#dcfce7';
+        badge.style.borderColor = '#86efac';
+        badge.style.color = '#15803d';
+      } else if (completed > 0) {
+        badge.textContent = `${completed} of ${total} completed today`;
+        badge.style.background = '#eef2ff';
+        badge.style.borderColor = '#c7d2fe';
+        badge.style.color = '#4338ca';
+      } else {
+        badge.textContent = `0 of ${total} completed today`;
+        badge.style.background = 'white';
+        badge.style.borderColor = 'var(--border)';
+        badge.style.color = 'var(--text-muted)';
+      }
+    }
+  }
+
+  // Copy Physician Questions to Clipboard
+  function copyDoctorQuestions() {
+    const items = document.querySelectorAll('#doctorQuestionsList li');
+    let textToCopy = "Questions for My Physician (HealthGuard AI Assessment #HG-" + predId + "):\n\n";
+    items.forEach((item, idx) => {
+      textToCopy += (idx + 1) + ". " + item.innerText.trim() + "\n";
+    });
+
+    navigator.clipboard.writeText(textToCopy).then(() => {
+      const copyBtnText = document.getElementById('copyQuestionsText');
+      if (copyBtnText) {
+        const originalText = copyBtnText.textContent;
+        copyBtnText.textContent = 'Copied to Clipboard!';
+        setTimeout(() => {
+          copyBtnText.textContent = originalText;
+        }, 2000);
+      }
+    }).catch(err => {
+      console.warn('Clipboard copy failed:', err);
+    });
+  }
+</script>
+
+<style>
+  /* ==========================================================================
+     Result Page Dedicated Styling & Alignment System
+     ========================================================================== */
+
+  .result-page-container {
+    max-width: 1240px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2.25rem 1.5rem 4.5rem;
+  }
+
+  /* Result Header Layout */
+  .result-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 1.75rem;
+    flex-wrap: wrap;
+  }
+
+  .result-header-meta {
+    flex: 1 1 500px;
+  }
+
+  .result-meta-tags {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .result-meta-date {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .result-title {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    color: var(--text-main);
+    line-height: 1.2;
+    margin-bottom: 0.35rem;
+  }
+
+  .result-subtitle {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    line-height: 1.45;
+  }
+
+  .result-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-result-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    padding: 0.65rem 1.15rem;
+    border-radius: var(--radius-md);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-result-action:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Disclaimer Banner */
+  .result-disclaimer {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border: 1px solid #fde68a;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.06);
+    margin-bottom: 2rem;
+  }
+
+  /* Hero Section Grid */
+  .result-hero-grid {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 1.75rem;
+    margin-bottom: 2rem;
+    align-items: stretch;
+  }
+
+  /* Risk Gauge Box */
+  .gauge-card-elevated {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    border: 1.5px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .risk-border-high {
+    border-color: #fca5a5;
+    background: linear-gradient(180deg, #ffffff 0%, #fffbfb 100%);
+  }
+
+  .risk-border-medium {
+    border-color: #fde68a;
+    background: linear-gradient(180deg, #ffffff 0%, #fffdfa 100%);
+  }
+
+  .risk-border-low {
+    border-color: #a7f3d0;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fdfb 100%);
+  }
+
+  .gauge-top-label {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .gauge-chip {
+    font-size: 0.725rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: var(--text-muted);
+    background: var(--surface-alt);
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--border);
+  }
+
+  .gauge-circle {
+    position: relative;
+    width: 190px;
+    height: 190px;
+    margin: 1rem 0;
+  }
+
+  .gauge-circle svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.05));
+  }
+
+  .gauge-circle circle {
+    fill: none;
+    stroke-width: 11;
+    stroke-linecap: round;
+  }
+
+  .gauge-circle .bg-circle {
+    stroke: var(--surface-alt);
+  }
+
+  .gauge-circle .progress-circle {
+    transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .gauge-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+
+  .gauge-percent {
+    font-size: 2.5rem;
+    font-weight: 800;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .gauge-sub {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 0.35rem;
+  }
+
+  .gauge-badge-wrapper {
+    margin-bottom: 1.25rem;
+  }
+
+  .gauge-category-badge {
+    font-size: 0.95rem;
+    padding: 0.55rem 1.25rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    animation: dotPulse 1.8s infinite;
+  }
+
+  .pulse-danger {
+    background-color: #ef4444;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+
+  .pulse-caution {
+    background-color: #f59e0b;
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  }
+
+  .pulse-safe {
+    background-color: #10b981;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+
+  @keyframes dotPulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  }
+
+  .gauge-quick-stats {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    width: 100%;
+    padding: 0.75rem 0.5rem;
+    background: var(--surface-alt);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    margin-bottom: 1rem;
+  }
+
+  .quick-stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+  }
+
+  .quick-stat-label {
+    font-size: 0.725rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .quick-stat-val {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--text-main);
+  }
+
+  .quick-stat-val small {
+    font-size: 0.725rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .quick-stat-divider {
+    width: 1px;
+    height: 28px;
+    background: var(--border);
+  }
+
+  .gauge-footer-note {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  /* Narrative Card */
+  .result-narrative-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 2rem 2.25rem;
+    border-radius: var(--radius-lg);
+    border: 1.5px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    background: var(--surface);
+  }
+
+  .narrative-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .narrative-title-group {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+
+  .narrative-icon-box {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: var(--primary-surface);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+  }
+
+  .narrative-heading {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin: 0;
+    line-height: 1.25;
+  }
+
+  .narrative-subheading {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .narrative-body-text {
+    font-size: 1rem;
+    color: #334155;
+    line-height: 1.65;
+    margin-bottom: 1.25rem;
+  }
+
+  .care-provider-callout {
+    background: #f8fafc;
+    border-radius: var(--radius-md);
+    padding: 1.15rem 1.35rem;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid var(--primary);
+    margin-bottom: 1.25rem;
+  }
+
+  .care-provider-callout .callout-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--primary);
+    margin-bottom: 0.4rem;
+  }
+
+  .care-provider-callout h4 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: var(--primary);
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .care-provider-callout .callout-text {
+    font-size: 0.925rem;
+    color: var(--text-main);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .user-notes-card {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.75rem 1rem;
+    background: var(--surface-alt);
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-bottom: 1.25rem;
+    border: 1px solid var(--border);
+  }
+
+  /* ==========================================================================
+     Action Plan Trigger Button (High Profile Interactive CTA)
+     ========================================================================== */
+
+  .action-plan-trigger-wrap {
+    margin-top: 0.75rem;
+    width: 100%;
+  }
+
+  .btn-action-plan-cta {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.35rem;
+    border-radius: var(--radius-md);
+    border: 2px solid transparent;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .btn-action-plan-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .cta-danger {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+    border-color: #ef4444;
+  }
+
+  .cta-danger:hover {
+    background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+    box-shadow: 0 8px 20px -4px rgba(220, 38, 38, 0.4);
+  }
+
+  .cta-caution {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    color: white;
+    border-color: #f59e0b;
+  }
+
+  .cta-caution:hover {
+    background: linear-gradient(135deg, #b45309 0%, #92400e 100%);
+    box-shadow: 0 8px 20px -4px rgba(217, 119, 6, 0.4);
+  }
+
+  .cta-safe {
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+    color: white;
+    border-color: #818cf8;
+  }
+
+  .cta-safe:hover {
+    background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+    box-shadow: 0 8px 20px -4px rgba(79, 70, 229, 0.4);
+  }
+
+  .cta-icon-wrapper {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    margin-right: 1rem;
+    backdrop-filter: blur(4px);
+    animation: ctaIconPulse 2.5s infinite;
+  }
+
+  @keyframes ctaIconPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+
+  .cta-text-wrapper {
+    flex: 1;
+  }
+
+  .cta-primary-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+  }
+
+  .cta-secondary-hint {
+    font-size: 0.825rem;
+    opacity: 0.9;
+    margin-top: 0.15rem;
+    font-weight: 500;
+  }
+
+  .cta-arrow-badge {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+    margin-left: 0.75rem;
+    transition: transform 0.2s ease;
+  }
+
+  .btn-action-plan-cta.is-expanded .cta-arrow-badge {
+    background: rgba(255, 255, 255, 0.35);
+  }
+
+  /* Fade & Slide animation for Action Plan section */
+  .fade-slide-down {
+    animation: fadeSlideDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes fadeSlideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Prevention Banner polish */
+  .prevention-tag-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .prevention-protocol-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.9;
+  }
+
+  .prevention-main-title {
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1.25;
+    margin-bottom: 0.35rem;
+  }
+
+  .prevention-sub-title {
+    font-size: 0.95rem;
+    line-height: 1.55;
+    margin: 0;
+    opacity: 0.95;
+  }
+
+  .section-micro-heading {
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+    margin-bottom: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .pillars-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .pillars-section-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin-bottom: 0.25rem;
+  }
+
+  .pillars-section-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  .weight-target-badge {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    padding: 0.45rem 1rem;
+    border-radius: var(--radius-full);
+    font-size: 0.825rem;
+    font-weight: 700;
+    color: #92400e;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .doctor-questions-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .copy-questions-btn {
+    font-size: 0.8rem;
+    padding: 0.35rem 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .action-plan-footer-collapse {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Section Cards Alignment */
+  .result-section-card {
+    border-radius: var(--radius-lg);
+    border: 1.5px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    padding: 1.75rem 2rem;
+    margin-bottom: 2rem;
+    background: var(--surface);
+  }
+
+  .result-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1rem;
+  }
+
+  .result-section-header .card-title {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 0.2rem;
+  }
+
+  .result-section-header .card-subtitle {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+
+  /* Factor Cards Grid */
+  .result-factors-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.25rem;
+    margin: 0;
+  }
+
+  .factor-card-modern {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+    position: relative;
+    border-left-width: 4px;
+  }
+
+  .factor-card-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .factor-val-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    margin: 0.4rem 0 0.5rem;
+  }
+
+  .factor-val-row .factor-val {
+    font-size: 1.6rem;
+    font-weight: 800;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: var(--text-main);
+    line-height: 1;
+  }
+
+  .factor-val-row .factor-unit {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .factor-range-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.775rem;
+    color: var(--text-muted);
+    margin-bottom: 0.6rem;
+  }
+
+  .factor-range-label {
+    font-weight: 600;
+  }
+
+  .factor-range-val {
+    color: var(--text-main);
+    font-weight: 700;
+  }
+
+  .factor-meter-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--surface-alt);
+    border-radius: var(--radius-full);
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+  }
+
+  .factor-meter-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+  }
+
+  .fill-danger { width: 100%; background: #ef4444; }
+  .fill-caution { width: 65%; background: #f59e0b; }
+  .fill-safe { width: 35%; background: #10b981; }
+  .fill-neutral { width: 20%; background: #94a3b8; }
+
+  /* Recommendations Grid */
+  .recommendations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .rec-item-modern {
+    display: flex;
+    gap: 1.15rem;
+    padding: 1.25rem;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+  }
+
+  .rec-item-modern:hover {
+    background: white;
+    border-color: var(--primary);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px);
+  }
+
+  /* Bottom Nav */
+  .result-bottom-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem 0;
+  }
+
+  .bottom-nav-group {
+    display: flex;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-nav-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.35rem;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+  }
+
+  /* Simple Care Guide (Plain Explanation, Food Plan & Control Steps) */
+  .simple-guide-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    margin-bottom: 1.75rem;
+  }
+
+  .simple-guide-card.simple-guide-danger {
+    border-color: rgba(239, 68, 68, 0.35);
+  }
+
+  .simple-guide-card.simple-guide-caution {
+    border-color: rgba(245, 158, 11, 0.38);
+  }
+
+  .simple-guide-card.simple-guide-safe {
+    border-color: rgba(16, 185, 129, 0.35);
+  }
+
+  .simple-guide-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.15rem;
+    padding: 1.65rem 1.85rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .simple-guide-header-danger {
+    background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%);
+  }
+
+  .simple-guide-header-caution {
+    background: linear-gradient(135deg, #fffbeb 0%, #fefce8 100%);
+  }
+
+  .simple-guide-header-safe {
+    background: linear-gradient(135deg, #ecfdf5 0%, #eef2ff 100%);
+  }
+
+  .simple-guide-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.45rem;
+    flex-shrink: 0;
+    color: white;
+  }
+
+  .simple-guide-icon-danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    box-shadow: 0 6px 14px rgba(239, 68, 68, 0.3);
+  }
+
+  .simple-guide-icon-caution {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    box-shadow: 0 6px 14px rgba(245, 158, 11, 0.3);
+  }
+
+  .simple-guide-icon-safe {
+    background: linear-gradient(135deg, #10b981, #4f46e5);
+    box-shadow: 0 6px 14px rgba(16, 185, 129, 0.3);
+  }
+
+  .simple-guide-badge-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.4rem;
+  }
+
+  .simple-guide-kicker {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+  }
+
+  .simple-guide-headline {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin: 0 0 0.4rem;
+  }
+
+  .simple-guide-desc {
+    font-size: 0.94rem;
+    color: #334155;
+    line-height: 1.65;
+    margin: 0;
+  }
+
+  .critical-warning-box {
+    margin: 1.25rem 1.85rem 0;
+    padding: 1rem 1.2rem;
+    background: #fef2f2;
+    border: 1.5px solid #fca5a5;
+    border-radius: 14px;
+  }
+
+  .critical-warning-title {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #991b1b;
+    margin-bottom: 0.65rem;
+  }
+
+  .critical-warning-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .critical-warning-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: white;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.35rem 0.7rem;
+    border-radius: var(--radius-full);
+  }
+
+  .simple-guide-section {
+    padding: 1.5rem 1.85rem;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  }
+
+  .simple-guide-section:last-child {
+    border-bottom: none;
+  }
+
+  .simple-section-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1.15rem;
+  }
+
+  .simple-section-heading > i {
+    font-size: 1.2rem;
+    margin-top: 0.2rem;
+  }
+
+  .simple-section-heading h4 {
+    font-size: 1.08rem;
+    font-weight: 800;
+    margin: 0 0 0.2rem;
+    color: var(--text-main);
+  }
+
+  .simple-section-heading p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  .food-compare-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.15rem;
+  }
+
+  .food-box {
+    border-radius: 14px;
+    padding: 1.15rem 1.25rem;
+    border: 1px solid var(--border);
+  }
+
+  .food-box-eat {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+  }
+
+  .food-box-avoid {
+    background: #fef2f2;
+    border-color: #fecaca;
+  }
+
+  .food-box-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 800;
+    margin-bottom: 0.8rem;
+  }
+
+  .food-box-eat .food-box-title {
+    color: #166534;
+  }
+
+  .food-box-avoid .food-box-title {
+    color: #991b1b;
+  }
+
+  .food-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  .food-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: #1e293b;
+  }
+
+  .food-box-eat .food-list li i {
+    color: #16a34a;
+    margin-top: 0.25rem;
+    flex-shrink: 0;
+  }
+
+  .food-box-avoid .food-list li i {
+    color: #dc2626;
+    margin-top: 0.25rem;
+    flex-shrink: 0;
+  }
+
+  .meal-plan-strip {
+    margin-top: 1.15rem;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem 1.15rem;
+  }
+
+  .meal-plan-strip-title {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--primary-hover);
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .meal-plan-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+  }
+
+  .meal-slot-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 0.85rem;
+  }
+
+  .meal-slot-label {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--primary);
+    background: var(--primary-surface);
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-full);
+    margin-bottom: 0.4rem;
+  }
+
+  .meal-slot-items {
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: #334155;
+    margin: 0;
+  }
+
+  .control-steps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0.9rem;
+  }
+
+  .control-step-card {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--primary);
+    border-radius: 12px;
+    padding: 0.95rem 1.05rem;
+  }
+
+  .control-step-card.control-step-danger {
+    border-left-color: #ef4444;
+    background: #fffafa;
+  }
+
+  .control-step-card.control-step-caution {
+    border-left-color: #f59e0b;
+    background: #fffdf5;
+  }
+
+  .control-step-card.control-step-safe {
+    border-left-color: #10b981;
+    background: #f6fef9;
+  }
+
+  .control-step-title {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 0.35rem;
+  }
+
+  .control-step-detail {
+    font-size: 0.84rem;
+    line-height: 1.5;
+    color: #475569;
+    margin: 0;
+  }
+
+  @media (max-width: 900px) {
+    .food-compare-grid {
+      grid-template-columns: 1fr;
+    }
+    .meal-plan-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .simple-guide-header,
+    .simple-guide-section {
+      padding: 1.15rem 1.1rem;
+    }
+    .critical-warning-box {
+      margin: 1rem 1.1rem 0;
+    }
+    .meal-plan-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Responsive Adjustments */
+  @media (max-width: 992px) {
+    .result-hero-grid {
+      grid-template-columns: 1fr;
+    }
+    .gauge-card-elevated {
+      padding: 2rem 1.5rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .result-page-container {
+      padding: 1.5rem 1rem 3rem;
+    }
+    .result-header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .result-header-actions {
+      justify-content: stretch;
+    }
+    .result-header-actions .btn {
+      flex: 1;
+      justify-content: center;
+    }
+    .result-bottom-nav {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .bottom-nav-group {
+      flex-direction: column;
+    }
+    .btn-nav-action {
+      justify-content: center;
+      width: 100%;
+    }
+  }
+</style>
+{% endblock %}

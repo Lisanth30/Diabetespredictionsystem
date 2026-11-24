@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block title %}Screening History - HealthGuard AI{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 1.5rem 4rem;">
+  <!-- Header -->
+  <div class="dashboard-header" style="margin-top: 0;">
+    <div>
+      <h1 style="font-size: 1.85rem; margin-bottom: 0.35rem;">Assessment History</h1>
+      <p style="color: var(--text-muted);">Review and manage your historical diabetes screening records and clinical parameters.</p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+      <a href="{{ url_for('trends') }}" class="btn btn-secondary">
+        <i class="fa-solid fa-arrow-trend-up"></i> View Trends
+      </a>
+      <a href="{{ url_for('predict') }}" class="btn btn-primary">
+        <i class="fa-solid fa-plus"></i> New Screening
+      </a>
+    </div>
+  </div>
+
+  <!-- Risk Filter Tabs -->
+  <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+    <a href="{{ url_for('history', risk='all') }}" class="btn btn-sm {{ 'btn-primary' if current_filter == 'all' else 'btn-secondary' }}">
+      All Records ({{ records|length if current_filter == 'all' else '' }})
+    </a>
+    <a href="{{ url_for('history', risk='High') }}" class="btn btn-sm {{ 'btn-primary' if current_filter == 'High' else 'btn-secondary' }}">
+      <i class="fa-solid fa-circle" style="color: #ef4444; font-size: 0.6rem;"></i> High Risk
+    </a>
+    <a href="{{ url_for('history', risk='Medium') }}" class="btn btn-sm {{ 'btn-primary' if current_filter == 'Medium' else 'btn-secondary' }}">
+      <i class="fa-solid fa-circle" style="color: #f59e0b; font-size: 0.6rem;"></i> Moderate Risk
+    </a>
+    <a href="{{ url_for('history', risk='Low') }}" class="btn btn-sm {{ 'btn-primary' if current_filter == 'Low' else 'btn-secondary' }}">
+      <i class="fa-solid fa-circle" style="color: #10b981; font-size: 0.6rem;"></i> Low Risk
+    </a>
+  </div>
+
+  <!-- Records Table -->
+  <div class="card">
+    {% if records %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Assessment Date</th>
+              <th>Glucose</th>
+              <th>Blood Pressure</th>
+              <th>BMI</th>
+              <th>Insulin</th>
+              <th>Age</th>
+              <th>Probability</th>
+              <th>Risk Level</th>
+              <th style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pred in records %}
+              <tr>
+                <td>#HG-{{ pred.id }}</td>
+                <td>
+                  <strong>{{ pred.created_at.strftime('%b %d, %Y') }}</strong>
+                  <div style="font-size: 0.75rem; color: var(--text-light);">{{ pred.created_at.strftime('%I:%M %p') }}</div>
+                </td>
+                <td>
+                  <span style="font-weight: 600; {{ 'color: var(--danger);' if pred.glucose >= 126 else ('color: var(--caution);' if pred.glucose >= 100 else '') }}">
+                    {{ pred.glucose }} mg/dL
+                  </span>
+                </td>
+                <td>{{ pred.blood_pressure }} mm Hg</td>
+                <td>
+                  <span style="font-weight: 600; {{ 'color: var(--danger);' if pred.bmi >= 30 else ('color: var(--caution);' if pred.bmi >= 25 else '') }}">
+                    {{ pred.bmi }} kg/m²
+                  </span>
+                </td>
+                <td>{{ pred.insulin }} μU/mL</td>
+                <td>{{ pred.age }} yrs</td>
+                <td><strong style="color: var(--primary);">{{ pred.probability }}%</strong></td>
+                <td>
+                  {% if pred.risk_level == 'High' %}
+                    <span class="badge badge-danger">High</span>
+                  {% elif pred.risk_level == 'Medium' %}
+                    <span class="badge badge-caution">Medium</span>
+                  {% else %}
+                    <span class="badge badge-safe">Low</span>
+                  {% endif %}
+                </td>
+                <td style="text-align: right; white-space: nowrap;">
+                  <a href="{{ url_for('prediction_result', pred_id=pred.id) }}" class="btn btn-secondary btn-sm" title="View Full Report">
+                    <i class="fa-solid fa-eye"></i>
+                  </a>
+                  <a href="{{ url_for('download_pdf', pred_id=pred.id) }}" class="btn btn-secondary btn-sm" title="Download PDF Report">
+                    <i class="fa-solid fa-file-pdf" style="color: #dc2626;"></i>
+                  </a>
+                  <form method="POST" action="{{ url_for('delete_prediction', pred_id=pred.id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete assessment #HG-{{ pred.id }}?');">
+                    <button type="submit" class="btn btn-secondary btn-sm" title="Delete Record" style="color: var(--danger);">
+                      <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 3.5rem 1rem;">
+        <div class="kpi-icon teal" style="margin: 0 auto 1.25rem; width: 64px; height: 64px; font-size: 1.75rem;">
+          <i class="fa-solid fa-folder-open"></i>
+        </div>
+        <h3 style="margin-bottom: 0.5rem;">No Assessment Records Found</h3>
+        <p style="color: var(--text-muted); max-width: 480px; margin: 0 auto 1.75rem; font-size: 0.95rem;">
+          {% if current_filter != 'all' %}
+            No assessments match the selected filter "{{ current_filter }} Risk".
+          {% else %}
+            You haven't completed any diabetes risk screening assessments yet.
+          {% endif %}
+        </p>
+        <a href="{{ url_for('predict') }}" class="btn btn-primary">
+          <i class="fa-solid fa-plus"></i> Run New Assessment
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

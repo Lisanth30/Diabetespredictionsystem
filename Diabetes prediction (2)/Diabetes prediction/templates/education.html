@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+
+{% block title %}Diabetes Health Education & Prevention Guide - HealthGuard AI{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2.5rem 1.5rem 4rem; max-width: 1080px;">
+
+  <!-- Hero Banner -->
+  <div style="text-align: center; max-width: 760px; margin: 0 auto 3rem;">
+    <div class="hero-badge" style="margin-bottom: 1rem;">
+      <i class="fa-solid fa-book-medical"></i> Educational Resource
+    </div>
+    <h1 style="font-size: 2.4rem; margin-bottom: 1rem;">Diabetes Health, Prevention & Clinical Guidelines</h1>
+    <p style="font-size: 1.1rem; color: var(--text-muted); line-height: 1.6;">
+      Evidence-based educational information on diabetes classification, metabolic risk factors, prevention protocols, and the vital importance of professional clinical laboratory evaluation.
+    </p>
+  </div>
+
+  <!-- Medical Disclaimer Notice -->
+  <div class="disclaimer-banner" style="margin-bottom: 2.5rem;">
+    <div class="disclaimer-icon">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+    </div>
+    <div class="disclaimer-content">
+      <h4>Educational Purpose Only</h4>
+      <p>
+        The information provided below is compiled from peer-reviewed public health guidelines (including the American Diabetes Association and World Health Organization). 
+        It is intended for educational empowerment and does not substitute for personalized medical diagnosis, prescription, or therapeutic management by a licensed physician.
+      </p>
+    </div>
+  </div>
+
+  <!-- Section 1: Types of Diabetes -->
+  <div style="margin-bottom: 3.5rem;">
+    <h2 style="font-size: 1.6rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+      <i class="fa-solid fa-dna" style="color: var(--primary);"></i>
+      Understanding Diabetes Classifications
+    </h2>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem;">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h3 style="font-size: 1.1rem;">Type 1 Diabetes</h3>
+          <span class="badge badge-neutral">Autoimmune</span>
+        </div>
+        <p style="font-size: 0.875rem; color: var(--text-muted); line-height: 1.6;">
+          An autoimmune condition where the immune system attacks insulin-producing beta cells in the pancreas. Typically diagnosed in childhood or young adulthood. Requires daily exogenous insulin therapy.
+        </p>
+      </div>
+
+      <div class="card" style="border-color: var(--primary-light);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h3 style="font-size: 1.1rem; color: var(--primary);">Type 2 Diabetes</h3>
+          <span class="badge badge-caution">Most Common (90-95%)</span>
+        </div>
+        <p style="font-size: 0.875rem; color: var(--text-muted); line-height: 1.6;">
+          Characterized by progressive insulin resistance and relative insulin deficiency. Strongly correlated with lifestyle, elevated BMI, and genetic predisposition. Often preventable or manageable through lifestyle and medical intervention.
+        </p>
+      </div>
+
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h3 style="font-size: 1.1rem;">Prediabetes</h3>
+          <span class="badge badge-caution">Reversible Stage</span>
+        </div>
+        <p style="font-size: 0.875rem; color: var(--text-muted); line-height: 1.6;">
+          Blood glucose levels are elevated above normal baseline (FPG 100–125 mg/dL) but not yet meeting the threshold for full diabetes. With prompt lifestyle modification, progression can be halted or reversed.
+        </p>
+      </div>
+
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <h3 style="font-size: 1.1rem;">Gestational Diabetes</h3>
+          <span class="badge badge-neutral">Pregnancy-Related</span>
+        </div>
+        <p style="font-size: 0.875rem; color: var(--text-muted); line-height: 1.6;">
+          Develops during pregnancy when placental hormones impair maternal insulin sensitivity. Usually resolves postpartum, but conveys elevated long-term risk of developing Type 2 diabetes later in life.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Clinical Diagnostic Criteria Standards Table -->
+  <div class="card" style="margin-bottom: 3.5rem;">
+    <div class="card-header">
+      <div class="card-title">American Diabetes Association (ADA) Clinical Diagnostic Benchmarks</div>
+      <span class="badge badge-safe">Certified Lab Standards</span>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Diagnostic Test</th>
+            <th>Normal Category</th>
+            <th>Prediabetes Category</th>
+            <th>Diabetes Indication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <strong>Fasting Plasma Glucose (FPG)</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">No caloric intake for at least 8 hours</div>
+            </td>
+            <td><span class="badge badge-safe">70 – 99 mg/dL</span></td>
+            <td><span class="badge badge-caution">100 – 125 mg/dL</span></td>
+            <td><span class="badge badge-danger">≥ 126 mg/dL</span></td>
+          </tr>
+          <tr>
+            <td>
+              <strong>Glycated Hemoglobin (HbA1c)</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Average blood sugar over past 2-3 months</div>
+            </td>
+            <td><span class="badge badge-safe">&lt; 5.7%</span></td>
+            <td><span class="badge badge-caution">5.7% – 6.4%</span></td>
+            <td><span class="badge badge-danger">≥ 6.5%</span></td>
+          </tr>
+          <tr>
+            <td>
+              <strong>Oral Glucose Tolerance Test (OGTT)</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Measured 2 hours post 75g glucose drink</div>
+            </td>
+            <td><span class="badge badge-safe">&lt; 140 mg/dL</span></td>
+            <td><span class="badge badge-caution">140 – 199 mg/dL</span></td>
+            <td><span class="badge badge-danger">≥ 200 mg/dL</span></td>
+          </tr>
+          <tr>
+            <td>
+              <strong>Random Blood Glucose</strong>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Measured at any random time with symptoms</div>
+            </td>
+            <td><span class="badge badge-safe">N/A</span></td>
+            <td><span class="badge badge-safe">N/A</span></td>
+            <td><span class="badge badge-danger">≥ 200 mg/dL</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Section 3: Modifiable vs Non-Modifiable Risk Factors -->
+  <div style="margin-bottom: 3.5rem;">
+    <h2 style="font-size: 1.6rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+      <i class="fa-solid fa-list-check" style="color: var(--primary);"></i>
+      Key Risk Factors Explained
+    </h2>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.75rem;" class="risk-factors-grid">
+      <!-- Modifiable -->
+      <div class="card" style="border-left: 5px solid var(--safe);">
+        <h3 style="font-size: 1.2rem; margin-bottom: 1rem; color: var(--safe-text); display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-person-walking"></i> Modifiable Risk Factors (Within Your Control)
+        </h3>
+        <ul style="padding-left: 1.25rem; font-size: 0.9rem; color: var(--text-main); display: flex; flex-direction: column; gap: 0.75rem;">
+          <li><strong>Body Mass Index (BMI ≥ 25):</strong> Excess visceral adipose tissue promotes chronic systemic inflammation and impairs cellular insulin sensitivity.</li>
+          <li><strong>Physical Inactivity:</strong> Muscle contractions stimulate GLUT4 glucose transporters independent of insulin. Less than 150 mins/week raises risk significantly.</li>
+          <li><strong>Ultra-Processed High-GI Diet:</strong> Frequent consumption of refined sugars, sweetened sodas, and low-fiber foods creates severe glycemic spikes.</li>
+          <li><strong>Hypertension (BP ≥ 130/80):</strong> High vascular pressure frequently co-exists with metabolic syndrome and microvascular strain.</li>
+        </ul>
+      </div>
+
+      <!-- Non-Modifiable -->
+      <div class="card" style="border-left: 5px solid var(--caution);">
+        <h3 style="font-size: 1.2rem; margin-bottom: 1rem; color: var(--caution-text); display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-dna"></i> Non-Modifiable Risk Factors (Requiring Surveillance)
+        </h3>
+        <ul style="padding-left: 1.25rem; font-size: 0.9rem; color: var(--text-main); display: flex; flex-direction: column; gap: 0.75rem;">
+          <li><strong>Family History (Genetics):</strong> Having a first-degree relative (parent or sibling) with Type 2 diabetes roughly doubles or triples your lifetime baseline risk.</li>
+          <li><strong>Age (≥ 45 Years):</strong> Metabolic rate, muscle mass, and pancreatic beta cell responsiveness gradually decline with advancing age.</li>
+          <li><strong>Gestational Diabetes History:</strong> Women who experienced diabetes during pregnancy have up to a 50% greater probability of developing Type 2 diabetes within 10 years.</li>
+          <li><strong>Polycystic Ovary Syndrome (PCOS):</strong> Endocrine syndrome linked to inherent hyperinsulinemia and metabolic challenges.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Warning Signs & Symptoms -->
+  <div class="card" style="margin-bottom: 3.5rem;">
+    <div class="card-header">
+      <div class="card-title">Recognizing Warning Signs & Symptoms (The Classic 3 "P"s)</div>
+      <span class="badge badge-caution">Clinical Alert</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-top: 1rem;">
+      <div style="background: var(--surface-alt); padding: 1.25rem; border-radius: var(--radius-md);">
+        <div style="font-size: 1.5rem; color: var(--primary); margin-bottom: 0.5rem;"><i class="fa-solid fa-toilet"></i></div>
+        <h4 style="font-size: 1rem; margin-bottom: 0.25rem;">Polyuria (Frequent Urination)</h4>
+        <p style="font-size: 0.825rem; color: var(--text-muted); line-height: 1.4;">
+          Kidneys work overtime to excrete excess blood glucose into urine, drawing fluids from tissues.
+        </p>
+      </div>
+
+      <div style="background: var(--surface-alt); padding: 1.25rem; border-radius: var(--radius-md);">
+        <div style="font-size: 1.5rem; color: var(--secondary); margin-bottom: 0.5rem;"><i class="fa-solid fa-glass-water"></i></div>
+        <h4 style="font-size: 1rem; margin-bottom: 0.25rem;">Polydipsia (Excessive Thirst)</h4>
+        <p style="font-size: 0.825rem; color: var(--text-muted); line-height: 1.4;">
+          As fluids are continuously excreted through frequent urination, severe persistent dehydration triggers extreme thirst.
+        </p>
+      </div>
+
+      <div style="background: var(--surface-alt); padding: 1.25rem; border-radius: var(--radius-md);">
+        <div style="font-size: 1.5rem; color: var(--caution); margin-bottom: 0.5rem;"><i class="fa-solid fa-utensils"></i></div>
+        <h4 style="font-size: 1rem; margin-bottom: 0.25rem;">Polyphagia (Extreme Hunger)</h4>
+        <p style="font-size: 0.825rem; color: var(--text-muted); line-height: 1.4;">
+          Because cells cannot absorb glucose without functioning insulin, the body feels starved of energy.
+        </p>
+      </div>
+
+      <div style="background: var(--surface-alt); padding: 1.25rem; border-radius: var(--radius-md);">
+        <div style="font-size: 1.5rem; color: var(--danger); margin-bottom: 0.5rem;"><i class="fa-solid fa-eye-slash"></i></div>
+        <h4 style="font-size: 1rem; margin-bottom: 0.25rem;">Blurred Vision & Fatigue</h4>
+        <p style="font-size: 0.825rem; color: var(--text-muted); line-height: 1.4;">
+          Hyperglycemia alters fluid dynamics inside the crystalline eye lens and deprives muscle tissue of vital glucose fuel.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Actionable Prevention & Lifestyle Steps -->
+  <div style="margin-bottom: 3rem;">
+    <h2 style="font-size: 1.6rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+      <i class="fa-solid fa-shield-heart" style="color: var(--primary);"></i>
+      Evidence-Based Prevention & Lifestyle Blueprint
+    </h2>
+
+    <div class="recommendation-list">
+      <div class="rec-item">
+        <div class="rec-icon"><i class="fa-solid fa-weight-scale"></i></div>
+        <div class="rec-content">
+          <h4>Achieve 5% to 7% Weight Reduction</h4>
+          <p>The landmark Diabetes Prevention Program (DPP) randomized clinical trial proved that losing just 5–7% of total body weight (e.g. 10–14 lbs for a 200 lb individual) reduces the incidence of Type 2 diabetes by 58% across all demographics.</p>
+        </div>
+      </div>
+
+      <div class="rec-item">
+        <div class="rec-icon"><i class="fa-solid fa-person-running"></i></div>
+        <div class="rec-content">
+          <h4>150 Minutes of Moderate Aerobic Activity Weekly</h4>
+          <p>Spread across at least 3 days per week (such as 30 minutes of brisk walking 5 days a week), alongside two days of resistance or strength training. Exercise enhances muscular insulin sensitivity for up to 48 hours post-workout.</p>
+        </div>
+      </div>
+
+      <div class="rec-item">
+        <div class="rec-icon"><i class="fa-solid fa-bowl-food"></i></div>
+        <div class="rec-content">
+          <h4>Adopt a Low-Glycemic, High-Fiber Mediterranean Nutrition Model</h4>
+          <p>Fill half your plate with non-starchy vegetables (spinach, broccoli, peppers), one quarter with lean protein (fish, poultry, tofu, lentils), and one quarter with complex high-fiber carbohydrates (quinoa, brown rice, oats). Minimize processed sugars and trans fats.</p>
+        </div>
+      </div>
+
+      <div class="rec-item">
+        <div class="rec-icon"><i class="fa-solid fa-stethoscope"></i></div>
+        <div class="rec-content">
+          <h4>Annual Certified Diagnostic Bloodwork</h4>
+          <p>Schedule annual blood draws for Fasting Blood Sugar and HbA1c with your primary healthcare provider. Early detection during the prediabetes phase offers the highest likelihood of full lifestyle-driven remission.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA Box -->
+  <div style="background: var(--surface-alt); border-radius: var(--radius-lg); padding: 2rem; text-align: center; border: 1px solid var(--border);">
+    <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Ready to Screen Your Risk Indicators?</h3>
+    <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">
+      Input your clinical parameters into our Logistic Regression engine for real-time probability stratification and biomarker evaluation.
+    </p>
+    {% if current_user %}
+      <a href="{{ url_for('predict') }}" class="btn btn-primary btn-lg">
+        <i class="fa-solid fa-notes-medical"></i> Start Screening Assessment
+      </a>
+    {% else %}
+      <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">
+        <i class="fa-solid fa-user-plus"></i> Register & Screen Free
+      </a>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<style>
+  @media (max-width: 820px) {
+    .risk-factors-grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
+</style>
+{% endblock %}

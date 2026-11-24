@@ -1,0 +1,313 @@
+{% extends 'base.html' %}
+
+{% block title %}Patient Dashboard - HealthGuard AI{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2.5rem 1.5rem 4rem;">
+
+  <!-- Patient Welcome Hero Banner -->
+  <div class="patient-hero-banner">
+    <div class="patient-hero-left">
+      <div class="patient-avatar-large">
+        {{ current_user.name[0].upper() if current_user.name else 'P' }}
+        <div class="patient-status-indicator" title="Active Patient Account"></div>
+      </div>
+      <div>
+        <div class="patient-hero-title">
+          <span>Welcome back, {{ current_user.name }}</span>
+          <span class="patient-verified-pill">
+            <i class="fa-solid fa-circle-check"></i> Verified Patient
+          </span>
+        </div>
+        <div class="patient-hero-subtitle" style="margin-bottom: 0;">
+          Clinical Metabolic Screening &amp; AI Health Analytics Portal
+        </div>
+      </div>
+    </div>
+
+    <div class="patient-hero-actions">
+      <a href="{{ url_for('predict') }}" class="btn btn-primary btn-lg shadow-teal">
+        <i class="fa-solid fa-plus"></i> Start New Screening
+      </a>
+      <a href="{{ url_for('trends') }}" class="btn btn-secondary btn-lg">
+        <i class="fa-solid fa-chart-line"></i> Risk Trends
+      </a>
+    </div>
+  </div>
+
+  <!-- Medical Screening Disclaimer Callout -->
+  <div class="disclaimer-banner" style="margin-top: 0; margin-bottom: 2rem;">
+    <div class="disclaimer-icon">
+      <i class="fa-solid fa-shield-halved"></i>
+    </div>
+    <div class="disclaimer-content">
+      <h4>Clinical Screening &amp; Guidance Notice</h4>
+      <p>HealthGuard AI risk scores represent statistical estimations calibrated against verified clinical datasets (ROC-AUC 81%+). Results serve preventative awareness and do not substitute certified laboratory or physician diagnoses.</p>
+    </div>
+  </div>
+
+  <!-- 4 Elevated KPI Cards -->
+  <div class="kpi-grid">
+    <!-- Card 1: Total Screenings -->
+    <div class="kpi-card card-teal">
+      <div class="kpi-icon teal">
+        <i class="fa-solid fa-clipboard-check"></i>
+      </div>
+      <div class="kpi-details">
+        <div class="kpi-top-row">
+          <h4>Total Screenings</h4>
+          <span class="kpi-chip chip-neutral">All-Time</span>
+        </div>
+        <div class="kpi-value">{{ total_count }}</div>
+        <div class="kpi-sub">
+          {% if total_count > 0 %}
+            <a href="{{ url_for('history') }}" style="font-weight: 600;">View complete history &rarr;</a>
+          {% else %}
+            No assessments recorded yet
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Latest Risk Category -->
+    <div class="kpi-card {{ 'card-green' if (latest and latest.risk_level == 'Low') else ('card-amber' if (latest and latest.risk_level == 'Medium') else ('card-red' if (latest and latest.risk_level == 'High') else 'card-teal')) }}">
+      {% if latest %}
+        {% if latest.risk_level == 'High' %}
+          <div class="kpi-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        {% elif latest.risk_level == 'Medium' %}
+          <div class="kpi-icon amber"><i class="fa-solid fa-circle-exclamation"></i></div>
+        {% else %}
+          <div class="kpi-icon green"><i class="fa-solid fa-shield-heart"></i></div>
+        {% endif %}
+      {% else %}
+        <div class="kpi-icon teal"><i class="fa-solid fa-heart-pulse"></i></div>
+      {% endif %}
+
+      <div class="kpi-details">
+        <div class="kpi-top-row">
+          <h4>Latest Risk Level</h4>
+          {% if latest %}
+            {% if latest.risk_level == 'High' %}
+              <span class="kpi-chip chip-danger">High Risk</span>
+            {% elif latest.risk_level == 'Medium' %}
+              <span class="kpi-chip chip-caution">Moderate Risk</span>
+            {% else %}
+              <span class="kpi-chip chip-safe">Low Risk</span>
+            {% endif %}
+          {% else %}
+            <span class="kpi-chip chip-neutral">Pending</span>
+          {% endif %}
+        </div>
+
+        <div class="kpi-value" style="font-size: 1.45rem;">
+          {% if latest %}
+            {{ latest.risk_level }} <span style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">({{ latest.probability }}%)</span>
+          {% else %}
+            Awaiting Test
+          {% endif %}
+        </div>
+
+        <div class="kpi-sub">
+          {% if latest %}
+            Screened on {{ latest.created_at.strftime('%b %d, %Y') }}
+          {% else %}
+            Establish baseline assessment
+          {% endif %}
+        </div>
+
+        {% if latest %}
+          <div class="kpi-mini-bar">
+            <div 
+              class="kpi-mini-fill" 
+              style="width: {{ latest.probability }}%; background: {{ 'var(--danger)' if latest.risk_level == 'High' else ('var(--caution)' if latest.risk_level == 'Medium' else 'var(--safe)') }};"
+            ></div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Card 3: Average Fasting Glucose -->
+    <div class="kpi-card card-blue">
+      <div class="kpi-icon blue">
+        <i class="fa-solid fa-droplet"></i>
+      </div>
+      <div class="kpi-details">
+        <div class="kpi-top-row">
+          <h4>Average Glucose</h4>
+          {% if total_count > 0 %}
+            {% if avg_glucose < 100 %}
+              <span class="kpi-chip chip-safe">Normal</span>
+            {% elif avg_glucose < 126 %}
+              <span class="kpi-chip chip-caution">Borderline</span>
+            {% else %}
+              <span class="kpi-chip chip-danger">Elevated</span>
+            {% endif %}
+          {% else %}
+            <span class="kpi-chip chip-neutral">Reference</span>
+          {% endif %}
+        </div>
+
+        <div class="kpi-value">
+          {% if total_count > 0 %}
+            {{ avg_glucose }} <span style="font-size: 0.95rem; font-weight: 600; color: var(--text-muted);">mg/dL</span>
+          {% else %}
+            --
+          {% endif %}
+        </div>
+        <div class="kpi-sub">ADA Target: 70–99 mg/dL fasting</div>
+      </div>
+    </div>
+
+    <!-- Card 4: Average BMI -->
+    <div class="kpi-card card-teal">
+      <div class="kpi-icon teal">
+        <i class="fa-solid fa-weight-scale"></i>
+      </div>
+      <div class="kpi-details">
+        <div class="kpi-top-row">
+          <h4>Average BMI</h4>
+          {% if total_count > 0 %}
+            {% if avg_bmi < 25.0 %}
+              <span class="kpi-chip chip-safe">Normal</span>
+            {% elif avg_bmi < 30.0 %}
+              <span class="kpi-chip chip-caution">Overweight</span>
+            {% else %}
+              <span class="kpi-chip chip-danger">Obesity</span>
+            {% endif %}
+          {% else %}
+            <span class="kpi-chip chip-neutral">Reference</span>
+          {% endif %}
+        </div>
+
+        <div class="kpi-value">
+          {% if total_count > 0 %}
+            {{ avg_bmi }} <span style="font-size: 0.95rem; font-weight: 600; color: var(--text-muted);">kg/m²</span>
+          {% else %}
+            --
+          {% endif %}
+        </div>
+        <div class="kpi-sub">WHO Target: 18.5–24.9 kg/m²</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Recent Screenings Table -->
+  <div class="card" style="border-radius: 18px; overflow: hidden; box-shadow: var(--shadow-sm);">
+    <div class="card-header" style="background: white; padding: 1.25rem 1.75rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <h3 class="card-title" style="font-size: 1.2rem; margin-bottom: 0.2rem;">
+          <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary); margin-right: 0.4rem;"></i>
+          Recent Clinical Screenings
+        </h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0;">Your 5 most recent assessment evaluations and risk outcomes</p>
+      </div>
+      {% if total_count > 0 %}
+        <a href="{{ url_for('history') }}" class="btn btn-secondary btn-sm" style="font-weight: 600;">
+          <i class="fa-solid fa-list-check"></i> View All ({{ total_count }})
+        </a>
+      {% endif %}
+    </div>
+
+    {% if predictions %}
+      <div class="table-responsive">
+        <table class="table" style="margin-bottom: 0;">
+          <thead>
+            <tr>
+              <th>Date &amp; Time</th>
+              <th>Fasting Glucose</th>
+              <th>Blood Pressure</th>
+              <th>BMI Index</th>
+              <th>Age</th>
+              <th>Probability</th>
+              <th>Stratification</th>
+              <th style="text-align: right;">Clinical Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pred in predictions %}
+              <tr>
+                <td>
+                  <div style="font-weight: 700; color: var(--text-main);">
+                    {{ pred.created_at.strftime('%b %d, %Y') }}
+                  </div>
+                  <div style="font-size: 0.775rem; color: var(--text-light);">
+                    {{ pred.created_at.strftime('%I:%M %p') }}
+                  </div>
+                </td>
+                <td>
+                  <span class="kpi-chip {{ 'chip-danger' if pred.glucose >= 126 else ('chip-caution' if pred.glucose >= 100 else 'chip-safe') }}">
+                    {{ pred.glucose }} mg/dL
+                  </span>
+                </td>
+                <td>
+                  <span style="font-weight: 600; color: var(--text-main);">
+                    {{ pred.blood_pressure }}
+                  </span>
+                  <span style="font-size: 0.775rem; color: var(--text-muted);">mm Hg</span>
+                </td>
+                <td>
+                  <span class="kpi-chip {{ 'chip-danger' if pred.bmi >= 30 else ('chip-caution' if pred.bmi >= 25 else 'chip-safe') }}">
+                    {{ pred.bmi }} kg/m²
+                  </span>
+                </td>
+                <td>
+                  <span style="font-weight: 600;">{{ pred.age }}</span>
+                  <span style="font-size: 0.775rem; color: var(--text-muted);">yrs</span>
+                </td>
+                <td>
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <strong style="color: var(--primary); font-size: 0.95rem;">{{ pred.probability }}%</strong>
+                  </div>
+                  <div class="kpi-mini-bar" style="width: 70px; height: 4px; margin-top: 0.25rem;">
+                    <div 
+                      class="kpi-mini-fill" 
+                      style="width: {{ pred.probability }}%; background: {{ 'var(--danger)' if pred.risk_level == 'High' else ('var(--caution)' if pred.risk_level == 'Medium' else 'var(--safe)') }};"
+                    ></div>
+                  </div>
+                </td>
+                <td>
+                  {% if pred.risk_level == 'High' %}
+                    <span class="badge badge-danger">
+                      <i class="fa-solid fa-triangle-exclamation"></i> High Risk
+                    </span>
+                  {% elif pred.risk_level == 'Medium' %}
+                    <span class="badge badge-caution">
+                      <i class="fa-solid fa-circle-exclamation"></i> Moderate
+                    </span>
+                  {% else %}
+                    <span class="badge badge-safe">
+                      <i class="fa-solid fa-shield-heart"></i> Low Risk
+                    </span>
+                  {% endif %}
+                </td>
+                <td style="text-align: right; white-space: nowrap;">
+                  <a href="{{ url_for('prediction_result', pred_id=pred.id) }}" class="btn btn-secondary btn-sm" title="View Full Report">
+                    <i class="fa-solid fa-eye"></i> Details
+                  </a>
+                  <a href="{{ url_for('download_pdf', pred_id=pred.id) }}" class="btn btn-secondary btn-sm" title="Download Official PDF Report" style="margin-left: 0.35rem;">
+                    <i class="fa-solid fa-file-pdf" style="color: #dc2626;"></i> PDF
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 4rem 1.5rem; background: linear-gradient(180deg, white, var(--surface-alt));">
+        <div class="kpi-icon teal" style="margin: 0 auto 1.5rem; width: 72px; height: 72px; font-size: 2rem; box-shadow: 0 8px 20px -4px rgba(79, 70, 229, 0.25);">
+          <i class="fa-solid fa-notes-medical"></i>
+        </div>
+        <h3 style="font-size: 1.45rem; margin-bottom: 0.5rem; font-weight: 800;">No Assessment History Yet</h3>
+        <p style="color: var(--text-muted); max-width: 520px; margin: 0 auto 2rem; font-size: 0.95rem; line-height: 1.6;">
+          You haven't submitted any clinical parameters yet. Run your first diabetes risk screening to receive instant probability analysis, biomarker explainability, and personalized ADA lifestyle recommendations.
+        </p>
+        <a href="{{ url_for('predict') }}" class="btn btn-primary btn-lg shadow-teal">
+          <i class="fa-solid fa-notes-medical"></i> Run First Assessment Now
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

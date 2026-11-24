@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}User Management - Administrator Portal{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 1.5rem 4rem;">
+  <!-- Header -->
+  <div class="dashboard-header" style="margin-top: 0;">
+    <div>
+      <h1 style="font-size: 1.85rem; margin-bottom: 0.35rem;">User Account Administration</h1>
+      <p style="color: var(--text-muted);">Manage registered user credentials, assign administrative roles, and inspect patient screening volumes.</p>
+    </div>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
+      <i class="fa-solid fa-arrow-left"></i> Back to Admin Dashboard
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Registered Accounts ({{ users|length }})</div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Screenings</th>
+            <th>Registration Date</th>
+            <th style="text-align: right;">Administrative Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+            <tr>
+              <td>#{{ u.id }}</td>
+              <td><strong>{{ u.name }}</strong></td>
+              <td>{{ u.email }}</td>
+              <td>
+                <span class="role-pill {{ 'admin-pill' if u.role == 'admin' else '' }}">
+                  {{ u.role }}
+                </span>
+              </td>
+              <td><strong>{{ u.predictions|length }}</strong> assessments</td>
+              <td>{{ u.created_at.strftime('%b %d, %Y') }}</td>
+              <td style="text-align: right; white-space: nowrap;">
+                {% if u.id != session['user_id'] %}
+                  <form method="POST" action="{{ url_for('admin_toggle_user_role', user_id=u.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-secondary btn-sm" title="Toggle Admin/User Role">
+                      {% if u.role == 'admin' %}
+                        <i class="fa-solid fa-user-minus"></i> Make User
+                      {% else %}
+                        <i class="fa-solid fa-user-shield"></i> Make Admin
+                      {% endif %}
+                    </button>
+                  </form>
+                  <form method="POST" action="{{ url_for('admin_delete_user', user_id=u.id) }}" style="display: inline;" onsubmit="return confirm('Permanently delete user {{ u.name }} and all associated predictions?');">
+                    <button type="submit" class="btn btn-secondary btn-sm" title="Delete User" style="color: var(--danger);">
+                      <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                  </form>
+                {% else %}
+                  <span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">(Current Account)</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

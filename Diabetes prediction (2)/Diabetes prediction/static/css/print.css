@@ -1,0 +1,30 @@
+/* Print styles for clinical reports */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt;
+  }
+  .navbar, .sidebar, .sidebar-mobile-topbar, .sidebar-overlay, #healthAssistantLauncher, .footer, .btn, .no-print, .alert {
+    display: none !important;
+  }
+  body.has-sidebar .app-main-shell,
+  body.has-sidebar.sidebar-collapsed .app-main-shell {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+  .container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .card {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+  a {
+    text-decoration: none !important;
+    color: black !important;
+  }
+}

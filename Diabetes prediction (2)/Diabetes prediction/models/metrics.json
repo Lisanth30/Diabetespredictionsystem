@@ -1,0 +1,207 @@
+{
+  "model_name": "Logistic Regression",
+  "trained_at": "2026-09-12 14:28:58",
+  "dataset_records": 768,
+  "train_samples": 614,
+  "test_samples": 154,
+  "accuracy": 0.7338,
+  "precision": 0.6032,
+  "recall": 0.7037,
+  "f1_score": 0.6496,
+  "roc_auc": 0.8126,
+  "confusion_matrix": {
+    "tn": 75,
+    "fp": 25,
+    "fn": 16,
+    "tp": 38,
+    "matrix": [
+      [
+        75,
+        25
+      ],
+      [
+        16,
+        38
+      ]
+    ]
+  },
+  "feature_importance": [
+    {
+      "feature": "Glucose",
+      "coefficient": 1.1835,
+      "odds_ratio": 3.2657,
+      "abs_impact": 1.1835
+    },
+    {
+      "feature": "BMI",
+      "coefficient": 0.7096,
+      "odds_ratio": 2.0332,
+      "abs_impact": 0.7096
+    },
+    {
+      "feature": "Pregnancies",
+      "coefficient": 0.3729,
+      "odds_ratio": 1.4519,
+      "abs_impact": 0.3729
+    },
+    {
+      "feature": "DiabetesPedigreeFunction",
+      "coefficient": 0.2877,
+      "odds_ratio": 1.3334,
+      "abs_impact": 0.2877
+    },
+    {
+      "feature": "Age",
+      "coefficient": 0.1864,
+      "odds_ratio": 1.2049,
+      "abs_impact": 0.1864
+    },
+    {
+      "feature": "Insulin",
+      "coefficient": -0.0446,
+      "odds_ratio": 0.9564,
+      "abs_impact": 0.0446
+    },
+    {
+      "feature": "BloodPressure",
+      "coefficient": -0.0146,
+      "odds_ratio": 0.9855,
+      "abs_impact": 0.0146
+    },
+    {
+      "feature": "SkinThickness",
+      "coefficient": 0.014,
+      "odds_ratio": 1.0141,
+      "abs_impact": 0.014
+    }
+  ],
+  "feature_medians": {
+    "Pregnancies": 3.0,
+    "Glucose": 117.0,
+    "BloodPressure": 72.0,
+    "SkinThickness": 29.0,
+    "Insulin": 125.0,
+    "BMI": 32.4,
+    "DiabetesPedigreeFunction": 0.38,
+    "Age": 29.0
+  },
+  "roc_curve": [
+    {
+      "fpr": 0.0,
+      "tpr": 0.0
+    },
+    {
+      "fpr": 0.0,
+      "tpr": 0.0926
+    },
+    {
+      "fpr": 0.01,
+      "tpr": 0.1296
+    },
+    {
+      "fpr": 0.04,
+      "tpr": 0.1852
+    },
+    {
+      "fpr": 0.05,
+      "tpr": 0.2222
+    },
+    {
+      "fpr": 0.06,
+      "tpr": 0.3148
+    },
+    {
+      "fpr": 0.07,
+      "tpr": 0.3519
+    },
+    {
+      "fpr": 0.08,
+      "tpr": 0.4074
+    },
+    {
+      "fpr": 0.09,
+      "tpr": 0.4444
+    },
+    {
+      "fpr": 0.1,
+      "tpr": 0.463
+    },
+    {
+      "fpr": 0.13,
+      "tpr": 0.4815
+    },
+    {
+      "fpr": 0.18,
+      "tpr": 0.5
+    },
+    {
+      "fpr": 0.19,
+      "tpr": 0.537
+    },
+    {
+      "fpr": 0.2,
+      "tpr": 0.5556
+    },
+    {
+      "fpr": 0.21,
+      "tpr": 0.5741
+    },
+    {
+      "fpr": 0.22,
+      "tpr": 0.6481
+    },
+    {
+      "fpr": 0.24,
+      "tpr": 0.6667
+    },
+    {
+      "fpr": 0.25,
+      "tpr": 0.7222
+    },
+    {
+      "fpr": 0.28,
+      "tpr": 0.7593
+    },
+    {
+      "fpr": 0.29,
+      "tpr": 0.8148
+    },
+    {
+      "fpr": 0.34,
+      "tpr": 0.8519
+    },
+    {
+      "fpr": 0.35,
+      "tpr": 0.8889
+    },
+    {
+      "fpr": 0.43,
+      "tpr": 0.9074
+    },
+    {
+      "fpr": 0.44,
+      "tpr": 0.9259
+    },
+    {
+      "fpr": 0.46,
+      "tpr": 0.9444
+    },
+    {
+      "fpr": 0.48,
+      "tpr": 0.963
+    },
+    {
+      "fpr": 0.49,
+      "tpr": 0.9815
+    },
+    {
+      "fpr": 0.84,
+      "tpr": 1.0
+    },
+    {
+      "fpr": 1.0,
+      "tpr": 1.0
+    }
+  ],
+  "intercept": -0.257
+}

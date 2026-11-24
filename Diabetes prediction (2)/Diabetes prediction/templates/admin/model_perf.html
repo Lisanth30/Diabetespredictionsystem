@@ -1,0 +1,294 @@
+{% extends 'base.html' %}
+
+{% block title %}ML Model Performance & Evaluation - Administrator Portal{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 1.5rem 4rem;">
+  <!-- Header -->
+  <div class="dashboard-header" style="margin-top: 0;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+        <span class="badge badge-safe">Scikit-Learn ML Engine</span>
+        <span style="font-size: 0.85rem; color: var(--text-muted);">Last Calibrated: {{ metrics.get('trained_at', 'Recently') }}</span>
+      </div>
+      <h1 style="font-size: 1.85rem;">Logistic Regression Model Evaluation & Telemetry</h1>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+      <form method="POST" action="{{ url_for('admin_retrain_model') }}" onsubmit="return confirm('Retrain the Logistic Regression model using the latest dataset and recalculate evaluation metrics?');">
+        <button type="submit" class="btn btn-primary">
+          <i class="fa-solid fa-arrows-rotate"></i> Retrain Model
+        </button>
+      </form>
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
+        <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Performance Metric Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon teal">
+        <i class="fa-solid fa-bullseye"></i>
+      </div>
+      <div class="kpi-details">
+        <h4>Accuracy</h4>
+        <div class="kpi-value">{{ (metrics.get('accuracy', 0.7338) * 100)|round(1) }}%</div>
+        <div class="kpi-sub">Test set overall accuracy</div>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon green">
+        <i class="fa-solid fa-chart-pie"></i>
+      </div>
+      <div class="kpi-details">
+        <h4>ROC-AUC Score</h4>
+        <div class="kpi-value">{{ metrics.get('roc_auc', '0.8126') }}</div>
+        <div class="kpi-sub">Discrimination capacity</div>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon blue">
+        <i class="fa-solid fa-crosshairs"></i>
+      </div>
+      <div class="kpi-details">
+        <h4>Recall (Sensitivity)</h4>
+        <div class="kpi-value">{{ (metrics.get('recall', 0.7037) * 100)|round(1) }}%</div>
+        <div class="kpi-sub">Catching true positives</div>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon amber">
+        <i class="fa-solid fa-scale-balanced"></i>
+      </div>
+      <div class="kpi-details">
+        <h4>F1-Score</h4>
+        <div class="kpi-value">{{ (metrics.get('f1_score', 0.6496) * 100)|round(1) }}%</div>
+        <div class="kpi-sub">Harmonic precision/recall</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confusion Matrix & ROC Curve Section -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.75rem; margin-bottom: 2rem;" class="perf-grid">
+    
+    <!-- Confusion Matrix Visual Display -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Test Set Confusion Matrix (20% Holdout)</div>
+        <span class="badge badge-neutral">N = {{ metrics.get('test_samples', 154) }} Samples</span>
+      </div>
+
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        Evaluates the trade-off between True Positives, False Positives, True Negatives, and False Negatives.
+      </p>
+
+      {% set cm = metrics.get('confusion_matrix', {'tn': 75, 'fp': 25, 'fn': 16, 'tp': 38}) %}
+      <div class="confusion-matrix-grid">
+        <div></div>
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pred Negative</div>
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Pred Positive</div>
+
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; writing-mode: vertical-rl; transform: rotate(180deg);">Actual Negative</div>
+        <div class="cm-cell tn">
+          <div class="cm-count">{{ cm.tn }}</div>
+          <div class="cm-label">True Negative (TN)</div>
+        </div>
+        <div class="cm-cell fp">
+          <div class="cm-count">{{ cm.fp }}</div>
+          <div class="cm-label">False Positive (FP)</div>
+        </div>
+
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; writing-mode: vertical-rl; transform: rotate(180deg);">Actual Positive</div>
+        <div class="cm-cell fn">
+          <div class="cm-count">{{ cm.fn }}</div>
+          <div class="cm-label">False Negative (FN)</div>
+        </div>
+        <div class="cm-cell tp">
+          <div class="cm-count">{{ cm.tp }}</div>
+          <div class="cm-label">True Positive (TP)</div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-around; font-size: 0.825rem; color: var(--text-muted); margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 0.75rem;">
+        <span><strong>Specificity:</strong> {{ ((cm.tn / (cm.tn + cm.fp)) * 100)|round(1) }}%</span>
+        <span><strong>Sensitivity:</strong> {{ ((cm.tp / (cm.tp + cm.fn)) * 100)|round(1) }}%</span>
+      </div>
+    </div>
+
+    <!-- ROC Curve Chart -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Receiver Operating Characteristic (ROC)</div>
+        <span class="badge badge-safe">AUC = {{ metrics.get('roc_auc', '0.8126') }}</span>
+      </div>
+      <div style="position: relative; height: 290px; width: 100%;">
+        <canvas id="rocCurveChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Feature Importance & Logistic Regression Coefficients -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Logistic Regression Feature Coefficients & Impact Weighting</div>
+      <span class="badge badge-neutral">Standardized Weights</span>
+    </div>
+
+    <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+      Positive coefficients increase the predicted probability of diabetes per standard deviation increase in that biomarker. Odds ratios &gt; 1 indicate elevated risk.
+    </p>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.75rem;" class="coef-grid">
+      <!-- Coefficients Bar Chart -->
+      <div style="position: relative; height: 320px; width: 100%;">
+        <canvas id="featureCoefficientsChart"></canvas>
+      </div>
+
+      <!-- Feature Coefficients Table -->
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Biomarker Feature</th>
+              <th>Standardized Coef</th>
+              <th>Odds Ratio</th>
+              <th>Clinical Impact</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in metrics.get('feature_importance', []) %}
+              <tr>
+                <td><strong>{{ item.feature }}</strong></td>
+                <td>
+                  <span style="font-weight: 600; {{ 'color: var(--danger);' if item.coefficient > 0 else 'color: var(--safe);' }}">
+                    {{ item.coefficient }}
+                  </span>
+                </td>
+                <td>{{ item.odds_ratio }}</td>
+                <td>
+                  {% if item.coefficient > 0.6 %}
+                    <span class="badge badge-danger">Primary Risk Factor</span>
+                  {% elif item.coefficient > 0.2 %}
+                    <span class="badge badge-caution">Moderate Factor</span>
+                  {% elif item.coefficient > 0 %}
+                    <span class="badge badge-neutral">Slight Factor</span>
+                  {% else %}
+                    <span class="badge badge-safe">Inverse Factor</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // 1. ROC Curve Chart
+    const rocCanvas = document.getElementById('rocCurveChart');
+    if (rocCanvas) {
+      const rocPoints = {{ metrics.get('roc_curve', []) | tojson }};
+      const fprs = rocPoints.map(p => p.fpr);
+      const tprs = rocPoints.map(p => p.tpr);
+
+      new Chart(rocCanvas, {
+        type: 'line',
+        data: {
+          labels: fprs,
+          datasets: [
+            {
+              label: 'Logistic Regression ROC',
+              data: tprs,
+              borderColor: '#4f46e5',
+              backgroundColor: 'rgba(79, 70, 229, 0.1)',
+              fill: true,
+              borderWidth: 2.5,
+              tension: 0.2,
+              pointRadius: 2
+            },
+            {
+              label: 'Random Chance (AUC = 0.5)',
+              data: fprs,
+              borderColor: '#94a3b8',
+              borderDash: [5, 5],
+              fill: false,
+              pointRadius: 0,
+              borderWidth: 1.5
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              title: { display: true, text: 'False Positive Rate (1 - Specificity)' },
+              min: 0,
+              max: 1
+            },
+            y: {
+              title: { display: true, text: 'True Positive Rate (Sensitivity)' },
+              min: 0,
+              max: 1
+            }
+          }
+        }
+      });
+    }
+
+    // 2. Feature Importance Horizontal Bar Chart
+    const coefCanvas = document.getElementById('featureCoefficientsChart');
+    if (coefCanvas) {
+      const features = {{ metrics.get('feature_importance', []) | tojson }};
+      const labels = features.map(f => f.feature);
+      const coefs = features.map(f => f.coefficient);
+      const bgColors = coefs.map(c => c >= 0 ? 'rgba(79, 70, 229, 0.8)' : 'rgba(59, 130, 246, 0.8)');
+
+      new Chart(coefCanvas, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Logistic Regression Coefficient (Standardized)',
+            data: coefs,
+            backgroundColor: bgColors,
+            borderRadius: 4
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(226, 232, 240, 0.7)' },
+              title: { display: true, text: 'Standardized Coefficient Weight' }
+            }
+          }
+        }
+      });
+    }
+  });
+</script>
+<style>
+  @media (max-width: 900px) {
+    .perf-grid, .coef-grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
+</style>
+{% endblock %}

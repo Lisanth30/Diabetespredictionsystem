@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+
+{% block title %}Register Account - HealthGuard AI Diabetes Screening{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <!-- Animated Background Elements -->
+  <div class="auth-bg-ambient" aria-hidden="true">
+    <div class="auth-orb auth-orb-1"></div>
+    <div class="auth-orb auth-orb-2"></div>
+    <div class="auth-orb auth-orb-3"></div>
+  </div>
+
+  <div class="auth-card">
+    <div class="auth-card-topbar">
+      <a href="{{ url_for('index') }}" class="back-home-link" title="Return to Homepage">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Home</span>
+      </a>
+      <span class="auth-security-pill">
+        <i class="fa-solid fa-shield-halved"></i> HIPAA Ready
+      </span>
+    </div>
+
+    <div class="auth-header">
+      <div class="auth-icon-wrapper">
+        <div class="auth-icon-pulse"></div>
+        <i class="fa-solid fa-user-plus"></i>
+      </div>
+      <h2>Create Account</h2>
+      <p>Join HealthGuard AI for personalized diabetes screening & tracking</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('register') }}">
+      <div class="form-group">
+        <label for="name" class="form-label">
+          <span>Full Name</span>
+        </label>
+        <div class="input-icon-group">
+          <i class="fa-solid fa-user input-icon"></i>
+          <input 
+            type="text" 
+            id="name" 
+            name="name" 
+            class="form-control with-icon" 
+            required 
+            placeholder="e.g. Jane Doe" 
+            value="{{ name or '' }}"
+            autocomplete="name"
+          >
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email" class="form-label">
+          <span>Email Address</span>
+        </label>
+        <div class="input-icon-group">
+          <i class="fa-solid fa-envelope input-icon"></i>
+          <input 
+            type="email" 
+            id="email" 
+            name="email" 
+            class="form-control with-icon" 
+            required 
+            placeholder="jane@example.com" 
+            value="{{ email or '' }}"
+            autocomplete="email"
+          >
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password" class="form-label">
+          <span>Password</span>
+          <span class="unit-badge">Min 6 chars</span>
+        </label>
+        <div class="input-icon-group">
+          <i class="fa-solid fa-lock input-icon"></i>
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            class="form-control with-icon with-action" 
+            required 
+            placeholder="Create password" 
+            minlength="6"
+            autocomplete="new-password"
+          >
+          <button type="button" class="password-toggle-btn" id="toggleRegPassword" aria-label="Toggle password visibility">
+            <i class="fa-solid fa-eye" id="toggleRegPasswordIcon"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="confirm_password" class="form-label">
+          <span>Confirm Password</span>
+        </label>
+        <div class="input-icon-group">
+          <i class="fa-solid fa-lock-open input-icon"></i>
+          <input 
+            type="password" 
+            id="confirm_password" 
+            name="confirm_password" 
+            class="form-control with-icon" 
+            required 
+            placeholder="Confirm password" 
+            minlength="6"
+            autocomplete="new-password"
+          >
+        </div>
+      </div>
+
+      <div style="font-size: 0.775rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.5; background: rgba(241, 245, 249, 0.6); padding: 0.75rem; border-radius: var(--radius-sm); border-left: 3px solid var(--primary);">
+        HealthGuard AI provides automated statistical screening aids for preventative health awareness and does not substitute certified clinical diagnoses.
+      </div>
+
+      <button type="submit" class="btn auth-submit-btn btn-block btn-lg">
+        <span>Create My Free Account</span>
+        <i class="fa-solid fa-arrow-right auth-btn-arrow"></i>
+      </button>
+    </form>
+
+    <div class="auth-footer-links">
+      <span>Already have an account?</span>
+      <a href="{{ url_for('login') }}" class="auth-link-highlight">Sign In</a>
+    </div>
+
+    <div class="auth-trust-badge">
+      <i class="fa-solid fa-lock"></i>
+      <span>End-to-End Encrypted &bull; 100% Private Screening</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const toggleRegBtn = document.getElementById('toggleRegPassword');
+  const regPassword = document.getElementById('password');
+  const toggleRegIcon = document.getElementById('toggleRegPasswordIcon');
+
+  if (toggleRegBtn && regPassword && toggleRegIcon) {
+    toggleRegBtn.addEventListener('click', () => {
+      const isPass = regPassword.type === 'password';
+      regPassword.type = isPass ? 'text' : 'password';
+      toggleRegIcon.classList.toggle('fa-eye', !isPass);
+      toggleRegIcon.classList.toggle('fa-eye-slash', isPass);
+    });
+  }
+</script>
+{% endblock %}

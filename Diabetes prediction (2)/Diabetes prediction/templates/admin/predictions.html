@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}System Screenings Log - Administrator Portal{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 1.5rem 4rem;">
+  <!-- Header -->
+  <div class="dashboard-header" style="margin-top: 0;">
+    <div>
+      <h1 style="font-size: 1.85rem; margin-bottom: 0.35rem;">System-Wide Screening Assessments</h1>
+      <p style="color: var(--text-muted);">Audit and inspect clinical parameter submissions across all registered patients.</p>
+    </div>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">
+      <i class="fa-solid fa-arrow-left"></i> Back to Admin Dashboard
+    </a>
+  </div>
+
+  <!-- Search & Filter Toolbar -->
+  <div class="card" style="margin-bottom: 1.5rem; padding: 1rem 1.25rem;">
+    <form method="GET" action="{{ url_for('admin_predictions') }}" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+      <!-- Search Input -->
+      <div style="flex: 1; min-width: 240px; position: relative;">
+        <input type="text" name="q" class="form-control" placeholder="Search patient name or email..." value="{{ search_query or '' }}">
+      </div>
+
+      <!-- Risk Filter -->
+      <div style="min-width: 160px;">
+        <select name="risk" class="form-control" onchange="this.form.submit()">
+          <option value="all" {% if current_filter == 'all' %}selected{% endif %}>All Risk Categories</option>
+          <option value="High" {% if current_filter == 'High' %}selected{% endif %}>High Risk Only</option>
+          <option value="Medium" {% if current_filter == 'Medium' %}selected{% endif %}>Moderate Risk Only</option>
+          <option value="Low" {% if current_filter == 'Low' %}selected{% endif %}>Low Risk Only</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-sm">
+        <i class="fa-solid fa-magnifying-glass"></i> Filter
+      </button>
+
+      {% if search_query or current_filter != 'all' %}
+        <a href="{{ url_for('admin_predictions') }}" class="btn btn-secondary btn-sm">Reset</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Predictions Table -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Assessment Records ({{ predictions|length }} displayed)</div>
+    </div>
+
+    {% if predictions %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Patient</th>
+              <th>Date</th>
+              <th>Glucose</th>
+              <th>BP</th>
+              <th>BMI</th>
+              <th>Age</th>
+              <th>Probability</th>
+              <th>Risk Level</th>
+              <th style="text-align: right;">Report</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pred in predictions %}
+              <tr>
+                <td>#HG-{{ pred.id }}</td>
+                <td>
+                  <strong>{{ pred.user.name if pred.user else 'Unknown' }}</strong>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">{{ pred.user.email if pred.user else 'N/A' }}</div>
+                </td>
+                <td>{{ pred.created_at.strftime('%b %d, %Y') }}</td>
+                <td>
+                  <span style="font-weight: 600; {{ 'color: var(--danger);' if pred.glucose >= 126 else ('color: var(--caution);' if pred.glucose >= 100 else '') }}">
+                    {{ pred.glucose }}
+                  </span>
+                </td>
+                <td>{{ pred.blood_pressure }}</td>
+                <td>{{ pred.bmi }}</td>
+                <td>{{ pred.age }}</td>
+                <td><strong style="color: var(--primary);">{{ pred.probability }}%</strong></td>
+                <td>
+                  {% if pred.risk_level == 'High' %}
+                    <span class="badge badge-danger">High</span>
+                  {% elif pred.risk_level == 'Medium' %}
+                    <span class="badge badge-caution">Med</span>
+                  {% else %}
+                    <span class="badge badge-safe">Low</span>
+                  {% endif %}
+                </td>
+                <td style="text-align: right; white-space: nowrap;">
+                  <a href="{{ url_for('prediction_result', pred_id=pred.id) }}" class="btn btn-secondary btn-sm" title="View Full Analysis">
+                    <i class="fa-solid fa-eye"></i>
+                  </a>
+                  <a href="{{ url_for('download_pdf', pred_id=pred.id) }}" class="btn btn-secondary btn-sm" title="Download PDF Report">
+                    <i class="fa-solid fa-file-pdf" style="color: #dc2626;"></i>
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 3.5rem 1rem;">
+        <div class="kpi-icon teal" style="margin: 0 auto 1.25rem; width: 64px; height: 64px; font-size: 1.75rem;">
+          <i class="fa-solid fa-clipboard-question"></i>
+        </div>
+        <h3 style="margin-bottom: 0.5rem;">No Matching Screenings Found</h3>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">
+          Try adjusting your search criteria or resetting filters.
+        </p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
